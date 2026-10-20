@@ -57,46 +57,46 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Botões de Ação Rápida */}
-        <div className="flex items-center gap-2 flex-wrap justify-center">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center w-full md:w-auto">
           <button
             onClick={onOpenKeySheet}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-zinc-300 bg-[#1c1e23] hover:bg-[#252930] border border-[#373b45] transition-colors shadow-sm"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-zinc-300 bg-[#1c1e23] hover:bg-[#252930] border border-[#373b45] transition-colors shadow-sm"
             title="Abrir Folha de Chaves Mensal Militar"
           >
-            <KeyRound size={14} className="text-amber-400" />
-            <span>Folha de Chaves</span>
+            <KeyRound size={13} className="text-amber-400 shrink-0" />
+            <span><span className="hidden sm:inline">Folha de </span>Chaves</span>
           </button>
 
           <button
             onClick={onOpenTransmitQR}
             disabled={!hasCipherData}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 shadow transition-all active:scale-95"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 shadow transition-all active:scale-95"
             title="Gerar QR Code para transmissão Air-Gapped"
           >
-            <QrCode size={14} />
-            <span>Transmitir (QR)</span>
+            <QrCode size={13} className="shrink-0" />
+            <span>Transmitir</span>
           </button>
 
           <button
             onClick={onOpenScanQR}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-zinc-200 bg-[#252830] hover:bg-[#2f333e] border border-[#444955] transition-colors shadow-sm"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-zinc-200 bg-[#252830] hover:bg-[#2f333e] border border-[#444955] transition-colors shadow-sm"
             title="Escanear transmissão Air-Gapped via câmera ou imagem"
           >
-            <Scan size={14} className="text-emerald-400" />
-            <span>Receber (Câmera)</span>
+            <Scan size={13} className="text-emerald-400 shrink-0" />
+            <span>Receber</span>
           </button>
 
           <button
             onClick={onToggleModernLab}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-sm ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all shadow-sm ${
               showModernLab
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
                 : 'text-zinc-400 hover:text-zinc-200 bg-[#17181c] border border-[#2d3038]'
             }`}
             title="Alternar modo Raio-X comparativo com criptografia moderna"
           >
-            <SplitSquareVertical size={14} />
-            <span className="hidden sm:inline">Raio-X Criptográfico</span>
+            <SplitSquareVertical size={13} className="shrink-0" />
+            <span>Raio-X</span>
           </button>
         </div>
       </div>

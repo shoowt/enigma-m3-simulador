@@ -77,6 +77,7 @@ export default function App() {
   const [isQRModalOpen, setIsQRModalOpen] = useState<boolean>(false);
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
   const [showModernLab, setShowModernLab] = useState<boolean>(true);
+  const [mobileTab, setMobileTab] = useState<'machine' | 'crypto'>('machine');
 
   // Formata texto em blocos militares de 5 letras
   const formatInBlocksOfFive = (str: string): string => {
@@ -367,17 +368,17 @@ export default function App() {
       />
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-5 lg:p-8 space-y-3 sm:space-y-6 overflow-x-hidden">
         {/* Painel Tático de Entrada Rápida de Mensagem */}
-        <div className="bg-[#131519] border border-[#2b2e36] rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row items-center gap-4 justify-between">
+        <div className="bg-[#131519] border border-[#2b2e36] rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-lg flex flex-col md:flex-row items-stretch md:items-center gap-3 sm:gap-4 justify-between">
           <div className="flex-1 w-full space-y-1">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
-              <h2 className="text-xs font-mono font-bold tracking-widest text-zinc-200 uppercase">
-                Terminal de Transmissão Tática • Digitação Interativa ou em Lote
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+              <h2 className="text-[11px] sm:text-xs font-mono font-bold tracking-widest text-zinc-200 uppercase">
+                Terminal de Transmissão Tática
               </h2>
             </div>
-            <p className="text-[11px] font-mono text-zinc-400">
+            <p className="text-[10px] sm:text-[11px] font-mono text-zinc-400 hidden sm:block">
               Digite letras diretamente no seu teclado físico, clique nas teclas da máquina 2.5D ou cole um texto militar abaixo para cifrar instantaneamente.
             </p>
           </div>
@@ -396,15 +397,15 @@ export default function App() {
             <button
               onClick={handleProcessBatchText}
               disabled={!batchInput.trim()}
-              className="px-4 py-2 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
+              className="px-3 sm:px-4 py-2 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
             >
               <Play size={13} fill="currentColor" />
-              <span>Cifrar Lote</span>
+              <span>Cifrar</span>
             </button>
             {cipherTape.length > 0 && (
               <button
                 onClick={handleClearTape}
-                className="p-2 text-zinc-400 hover:text-red-400 bg-[#1a1c22] border border-[#333742] rounded-lg transition-colors"
+                className="p-2 text-zinc-400 hover:text-red-400 bg-[#1a1c22] border border-[#333742] rounded-lg transition-colors shrink-0"
                 title="Limpar texto cifrado e reiniciar estado"
               >
                 <RotateCcw size={15} />
@@ -413,10 +414,36 @@ export default function App() {
           </div>
         </div>
 
+        {/* Seletor Mobile de Abas (Máquina Enigma vs Raio-X) */}
+        <div className="flex lg:hidden bg-[#15171b] p-1 rounded-xl border border-[#2d3038] shadow w-full">
+          <button
+            type="button"
+            onClick={() => setMobileTab('machine')}
+            className={`flex-1 py-2 text-xs font-mono font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              mobileTab === 'machine'
+                ? 'bg-amber-500 text-black shadow-md'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span>🕹️ Máquina Enigma</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('crypto')}
+            className={`flex-1 py-2 text-xs font-mono font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              mobileTab === 'crypto'
+                ? 'bg-amber-500 text-black shadow-md'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span>🔬 Raio-X (AES-256)</span>
+          </button>
+        </div>
+
         {/* Layout Principal: Máquina Enigma à Esquerda / Raio-X Criptográfico à Direita */}
-        <div className={`grid gap-8 items-start ${showModernLab ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1'}`}>
+        <div className={`grid gap-4 sm:gap-8 items-start ${showModernLab ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1'}`}>
           {/* Coluna da Máquina Enigma 2.5D */}
-          <div className={`${showModernLab ? 'lg:col-span-7' : 'max-w-3xl mx-auto w-full'}`}>
+          <div className={`${mobileTab === 'machine' ? 'block' : 'hidden lg:block'} ${showModernLab ? 'lg:col-span-7' : 'max-w-3xl mx-auto w-full'} w-full`}>
             <EnigmaCase
               rotorTypes={rotorTypes}
               positions={positions}
@@ -441,22 +468,22 @@ export default function App() {
             />
 
             {/* Ações de Transmissão sob a máquina */}
-            <div className="flex items-center justify-between gap-3 mt-4 max-w-2xl mx-auto px-2">
+            <div className="flex items-center justify-between gap-2 mt-3 max-w-2xl mx-auto px-1">
               <button
                 onClick={() => setIsKeySheetOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-amber-400 transition-colors"
+                className="flex items-center gap-1 text-[11px] sm:text-xs font-mono text-zinc-400 hover:text-amber-400 transition-colors"
               >
-                <FileSpreadsheet size={14} />
-                <span>Folha de Chaves: <strong>Dia {currentDay}</strong></span>
+                <FileSpreadsheet size={13} />
+                <span>Folha: <strong>Dia {currentDay}</strong></span>
               </button>
 
               {cipherTape.length > 0 && (
                 <button
                   onClick={() => setIsQRModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-amber-300 bg-amber-950/40 border border-amber-800/60 hover:bg-amber-900/50 shadow transition-all active:scale-95 animate-pulse"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-amber-300 bg-amber-950/40 border border-amber-800/60 hover:bg-amber-900/50 shadow transition-all active:scale-95 animate-pulse"
                 >
-                  <Send size={13} />
-                  <span>Transmitir via QR Code Air-Gapped</span>
+                  <Send size={12} />
+                  <span>Transmitir (QR)</span>
                 </button>
               )}
             </div>
@@ -464,7 +491,7 @@ export default function App() {
 
           {/* Coluna do Raio-X Criptográfico (Split-View Moderno) */}
           {showModernLab && (
-            <div className="lg:col-span-5 space-y-6">
+            <div className={`${mobileTab === 'crypto' ? 'block' : 'hidden lg:block'} lg:col-span-5 space-y-4 sm:space-y-6 w-full`}>
               <CryptoInspector
                 plainText={plainText}
                 enigmaCipherText={cipherTape}

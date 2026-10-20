@@ -1,5 +1,5 @@
 /* ========================================================
-   SKEUOMORPHIC SHADERS & 2.5D REALISTIC TEXTURES
+   SKEUOMORPHIC SHADERS & 2.5D REALISTIC TEXTURES (MOBILE-OPTIMIZED)
    ======================================================== */
 
 /* 1. Madeira Nobre Envernizada (Caixa Externa com Profundidade) */
@@ -11,15 +11,18 @@
     inset 0 4px 8px rgba(255, 255, 255, 0.12),
     inset 0 -12px 24px rgba(0, 0, 0, 0.95),
     0 25px 60px -10px rgba(0, 0, 0, 0.95),
-    0 0 0 5px #150802;
-  border-radius: 18px;
+    0 0 0 3px #150802;
+  border-radius: 14px;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Cantoneiras e parafusos de latão/bronze */
 .brass-screw {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: radial-gradient(circle at 40% 40%, #e8c582 0%, #997327 70%, #523b0d 100%);
   box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 2px 3px rgba(0, 0, 0, 0.8);
@@ -31,7 +34,7 @@
   top: 50%;
   left: 20%;
   right: 20%;
-  height: 1.5px;
+  height: 1px;
   background: #3b2806;
   transform: translateY(-50%) rotate(42deg);
 }
@@ -40,35 +43,37 @@
 .metal-chassis {
   background: 
     radial-gradient(ellipse at 50% 30%, #2a2e33 0%, #1a1c1e 75%, #0f1011 100%);
-  border: 2px solid #363a40;
+  border: 1.5px solid #363a40;
   box-shadow: 
-    inset 0 3px 6px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px rgba(0, 0, 0, 0.9),
-    0 10px 30px rgba(0, 0, 0, 0.85);
-  border-radius: 12px;
+    inset 0 2px 5px rgba(255, 255, 255, 0.08),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.9),
+    0 8px 20px rgba(0, 0, 0, 0.85);
+  border-radius: 10px;
 }
 
-/* 3. Tecla Mecânica Tátil (Aro Cromado + Côncava + Afundamento) */
+/* 3. Tecla Mecânica Tátil (Responsiva: de 30px no mobile a 44px no desktop) */
 .typewriter-key {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: clamp(30px, 9.2vw, 44px);
+  height: clamp(30px, 9.2vw, 44px);
   border-radius: 50%;
   background: radial-gradient(circle at 42% 40%, #2f3236 0%, #141517 80%);
-  border: 2.5px solid #a3abb2; /* Anel cromado */
+  border: 2px solid #a3abb2; /* Anel cromado */
   box-shadow: 
-    0 5px 0 #0d0e0f,                      /* Altura física da mola */
-    0 8px 12px rgba(0, 0, 0, 0.75),       /* Sombra no chassi */
-    inset 0 2px 4px rgba(255, 255, 255, 0.4),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.9);
+    0 4px 0 #0d0e0f,                      /* Altura física da mola */
+    0 6px 10px rgba(0, 0, 0, 0.75),       /* Sombra no chassi */
+    inset 0 2px 3px rgba(255, 255, 255, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.9);
   color: #f1ede2;
   font-family: 'Courier Prime', Courier, monospace;
   font-weight: 700;
+  font-size: clamp(12px, 3.8vw, 17px);
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform 0.05s ease-out, box-shadow 0.05s ease-out;
 }
 
@@ -77,18 +82,18 @@
 }
 
 .typewriter-key:active, .typewriter-key.pressed {
-  transform: translateY(4px);
+  transform: translateY(3px);
   box-shadow: 
     0 1px 0 #0d0e0f,
-    0 3px 6px rgba(0, 0, 0, 0.85),
-    inset 0 2px 4px rgba(0, 0, 0, 0.8);
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    inset 0 2px 3px rgba(0, 0, 0, 0.8);
 }
 
-/* 4. Lâmpada do Lampboard (Off vs Incandescente On) */
+/* 4. Lâmpada do Lampboard (Responsiva: de 28px no mobile a 40px no desktop) */
 .lamp-cell {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: clamp(28px, 8.6vw, 40px);
+  height: clamp(28px, 8.6vw, 40px);
   border-radius: 50%;
   background: radial-gradient(circle at 48% 45%, #222428 0%, #0d0e10 85%);
   border: 1.5px solid #2e3136;
@@ -96,11 +101,11 @@
   align-items: center;
   justify-content: center;
   box-shadow: 
-    inset 0 3px 6px rgba(0, 0, 0, 0.9),
+    inset 0 2px 4px rgba(0, 0, 0, 0.9),
     0 1px 2px rgba(255, 255, 255, 0.05);
   font-family: 'Courier Prime', Courier, monospace;
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: clamp(11px, 3.5vw, 16px);
   color: #44474e; /* Filamento apagado */
   transition: all 0.08s ease-in-out;
 }
@@ -110,9 +115,9 @@
   color: #2b1100;
   border-color: #fde68a;
   box-shadow: 
-    0 0 16px 5px rgba(245, 158, 11, 0.95),
-    0 0 36px 14px rgba(217, 119, 6, 0.6),
-    inset 0 0 10px rgba(255, 255, 255, 0.95);
+    0 0 14px 4px rgba(245, 158, 11, 0.95),
+    0 0 28px 10px rgba(217, 119, 6, 0.6),
+    inset 0 0 8px rgba(255, 255, 255, 0.95);
   text-shadow: 0 0 2px #fff;
   transform: scale(1.06);
 }
@@ -127,26 +132,27 @@
     #242629 6px
   );
   box-shadow: 
-    inset 0 8px 10px rgba(0, 0, 0, 0.9),
-    inset 0 -8px 10px rgba(0, 0, 0, 0.9),
-    0 3px 6px rgba(0, 0, 0, 0.6);
-  border: 2px solid #454950;
+    inset 0 6px 8px rgba(0, 0, 0, 0.9),
+    inset 0 -6px 8px rgba(0, 0, 0, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.6);
+  border: 1.5px solid #454950;
 }
 
-/* 6. Soquetes do Plugboard */
+/* 6. Soquetes do Plugboard (Responsivo: de 24px no mobile a 32px no desktop) */
 .plug-socket {
-  width: 32px;
-  height: 32px;
+  width: clamp(24px, 7.5vw, 32px);
+  height: clamp(24px, 7.5vw, 32px);
   border-radius: 50%;
   background: radial-gradient(circle at 50% 50%, #0d0e10 0%, #1a1c1e 75%, #2e3238 100%);
   box-shadow: 
-    inset 0 3px 6px rgba(0, 0, 0, 0.95),
+    inset 0 2px 4px rgba(0, 0, 0, 0.95),
     0 1px 2px rgba(255, 255, 255, 0.15);
   border: 1px solid #3c4046;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
 }
 
 /* 7. Papel Militar Envelhecido (Key Sheet) */

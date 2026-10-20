@@ -24,25 +24,25 @@ export const RotorsUnit: React.FC<RotorsUnitProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center p-3 rounded-lg bg-[#141517] border border-[#2d3036] shadow-inner mb-4">
+    <div className="flex flex-col items-center p-2 sm:p-3 rounded-lg bg-[#141517] border border-[#2d3036] shadow-inner mb-2.5 sm:mb-4 w-full">
       {/* Barra de título do compartimento de rotores */}
-      <div className="flex items-center justify-between w-full px-2 mb-2">
-        <div className="flex items-center gap-1.5 text-xs text-amber-500/80 font-mono font-bold tracking-widest uppercase">
+      <div className="flex items-center justify-between w-full px-1 sm:px-2 mb-1.5 sm:mb-2">
+        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-amber-500/80 font-mono font-bold tracking-widest uppercase">
           <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]"></span>
-          Catracas de Avanço Mecânico (M3)
+          <span>Catracas (M3)</span>
         </div>
         <button
           onClick={onOpenLid}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-semibold text-zinc-300 hover:text-amber-400 bg-[#222428] hover:bg-[#2b2e34] border border-[#3e424a] rounded shadow transition-colors active:scale-95"
+          className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-mono font-semibold text-zinc-300 hover:text-amber-400 bg-[#222428] hover:bg-[#2b2e34] border border-[#3e424a] rounded shadow transition-colors active:scale-95"
           title="Abrir tampa para inspecionar rotores internos e anéis"
         >
-          <Settings2 size={13} />
-          <span>Abrir Tampa (Interno)</span>
+          <Settings2 size={12} />
+          <span>Abrir Tampa</span>
         </button>
       </div>
 
       {/* Rotores visíveis */}
-      <div className="flex items-center justify-center gap-5 sm:gap-7 py-2 px-4 bg-[#0d0e10] rounded-md border border-[#25282e] shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)]">
+      <div className="flex items-center justify-center gap-3 sm:gap-7 py-1.5 px-2 sm:px-4 bg-[#0d0e10] rounded-md border border-[#25282e] shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] w-full">
         {positions.map((pos, idx) => (
           <div key={idx} className="flex flex-col items-center">
             {/* Tag do Tipo de Rotor */}

@@ -111,34 +111,34 @@ export const Plugboard: React.FC<PlugboardProps> = ({
   };
 
   return (
-    <div className="flex flex-col p-4 rounded-xl bg-[#121316] border border-[#2b2e35] shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] relative">
+    <div className="flex flex-col p-2 sm:p-4 rounded-lg sm:rounded-xl bg-[#121316] border border-[#2b2e35] shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] relative w-full overflow-hidden">
       {/* Cabeçalho do Plugboard */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-2 mb-2 sm:mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono tracking-widest text-amber-500 uppercase font-bold">
-            STECKERBRETT (PAINEL FRONTAL DE CABOS)
+          <span className="text-[10px] sm:text-[11px] font-mono tracking-widest text-amber-500 uppercase font-bold">
+            STECKERBRETT (CABOS)
           </span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-[#1e2025] text-zinc-400 font-mono">
+          <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-[#1e2025] text-zinc-400 font-mono">
             {pairs.length}/10 cabos
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
           <button
             onClick={onResetToDaily}
-            className="flex items-center gap-1 text-[11px] font-mono text-zinc-400 hover:text-amber-400 px-2 py-1 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
+            className="flex items-center gap-1 text-[10px] sm:text-[11px] font-mono text-zinc-400 hover:text-amber-400 px-2 py-1 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
             title="Restaurar conexões da Folha de Chaves do Dia"
           >
-            <RotateCcw size={12} />
+            <RotateCcw size={11} />
             <span>Chave do Dia</span>
           </button>
           <button
             onClick={handleClearAll}
-            className="flex items-center gap-1 text-[11px] font-mono text-zinc-400 hover:text-red-400 px-2 py-1 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
+            className="flex items-center gap-1 text-[10px] sm:text-[11px] font-mono text-zinc-400 hover:text-red-400 px-2 py-1 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
             title="Remover todos os cabos"
           >
-            <Unplug size={12} />
-            <span>Desconectar Todos</span>
+            <Unplug size={11} />
+            <span>Desconectar</span>
           </button>
         </div>
       </div>
@@ -186,9 +186,9 @@ export const Plugboard: React.FC<PlugboardProps> = ({
         </svg>
 
         {/* Soquetes das 26 letras */}
-        <div className="flex flex-col gap-3 relative z-0">
+        <div className="flex flex-col gap-2 sm:gap-3 relative z-0">
           {PLUGBOARD_ROWS.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex justify-center gap-2 sm:gap-3">
+            <div key={rowIdx} className="flex justify-center gap-1 sm:gap-2.5 w-full">
               {row.map(char => {
                 const connectedPair = getConnectedPair(char);
                 const isSelected = selectedLetter === char;

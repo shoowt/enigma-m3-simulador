@@ -12,13 +12,13 @@ const LAMPBOARD_ROWS = [
 
 export const Lampboard: React.FC<LampboardProps> = ({ litChar }) => {
   return (
-    <div className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl bg-[#141619] border border-[#2a2d34] shadow-[inset_0_4px_16px_rgba(0,0,0,0.9)] mb-4">
-      <div className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase font-semibold mb-1">
-        GLÜHLAMPENFELD (PAINEL DE LÂMPADAS INCANDESCENTES)
+    <div className="flex flex-col items-center gap-1.5 sm:gap-2 p-1.5 sm:p-3.5 rounded-lg sm:rounded-xl bg-[#141619] border border-[#2a2d34] shadow-[inset_0_4px_16px_rgba(0,0,0,0.9)] mb-2.5 sm:mb-4 w-full overflow-hidden">
+      <div className="text-[9px] sm:text-[10px] font-mono tracking-widest text-zinc-500 uppercase font-semibold mb-0.5 sm:mb-1">
+        GLÜHLAMPENFELD (LÂMPADAS)
       </div>
 
       {LAMPBOARD_ROWS.map((row, rowIdx) => (
-        <div key={rowIdx} className="flex justify-center gap-1.5 sm:gap-2.5">
+        <div key={rowIdx} className="flex justify-center gap-1 sm:gap-2 w-full">
           {row.map(char => {
             const isActive = litChar === char;
             return (

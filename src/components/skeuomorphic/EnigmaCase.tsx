@@ -50,15 +50,15 @@ export const EnigmaCase: React.FC<EnigmaCaseProps> = ({
   };
 
   return (
-    <div className="wood-cabinet p-4 sm:p-7 max-w-2xl mx-auto shadow-2xl relative select-none">
+    <div className="wood-cabinet p-2 sm:p-5 md:p-6 max-w-2xl mx-auto shadow-2xl relative select-none">
       {/* 4 Parafusos de latão nos cantos da madeira */}
-      <div className="absolute top-3 left-3 brass-screw"></div>
-      <div className="absolute top-3 right-3 brass-screw"></div>
-      <div className="absolute bottom-3 left-3 brass-screw"></div>
-      <div className="absolute bottom-3 right-3 brass-screw"></div>
+      <div className="absolute top-1.5 left-1.5 sm:top-3 sm:left-3 brass-screw"></div>
+      <div className="absolute top-1.5 right-1.5 sm:top-3 sm:right-3 brass-screw"></div>
+      <div className="absolute bottom-1.5 left-1.5 sm:bottom-3 sm:left-3 brass-screw"></div>
+      <div className="absolute bottom-1.5 right-1.5 sm:bottom-3 sm:right-3 brass-screw"></div>
 
       {/* Chassi de Metal Preto Fosco */}
-      <div className="metal-chassis p-4 sm:p-6 flex flex-col gap-4">
+      <div className="metal-chassis p-2.5 sm:p-4 md:p-6 flex flex-col gap-2.5 sm:gap-4">
         {/* Plaqueta Metálica do Fabricante Militar */}
         <div className="flex items-center justify-between pb-3 border-b border-[#32363e]">
           <div className="flex items-center gap-2">

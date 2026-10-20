@@ -37,13 +37,13 @@ export const Keyboard: React.FC<KeyboardProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-2.5 p-3 sm:p-4 rounded-xl bg-[#17191d] border border-[#2e323a] shadow-md">
-      <div className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase font-semibold mb-1">
-        TASTATUR (TECLADO MECÂNICO MILITAR)
+    <div className="flex flex-col items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-3.5 rounded-lg sm:rounded-xl bg-[#17191d] border border-[#2e323a] shadow-md w-full overflow-hidden">
+      <div className="text-[9px] sm:text-[10px] font-mono tracking-widest text-zinc-500 uppercase font-semibold mb-0.5 sm:mb-1">
+        TASTATUR (TECLADO MECÂNICO)
       </div>
 
       {KEYBOARD_ROWS.map((row, rowIdx) => (
-        <div key={rowIdx} className="flex justify-center gap-1.5 sm:gap-2.5">
+        <div key={rowIdx} className="flex justify-center gap-1 sm:gap-2 w-full">
           {row.map(char => {
             const isPressed = pressedKey === char;
             return (
