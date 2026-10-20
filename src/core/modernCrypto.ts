@@ -1,9 +1,21 @@
 import type { ModernEncryptedBundle } from '../types/crypto';
 
 export class ModernCryptoEngine {
+  private static getCrypto(): Crypto {
+    if (typeof window !== 'undefined' && window.crypto) {
+      return window.crypto;
+    }
+    if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+      return globalThis.crypto;
+    }
+    throw new Error('Web Crypto API não disponível neste ambiente.');
+  }
+
   private static async deriveKey(secretPassphrase: string): Promise<CryptoKey> {
     const enc = new TextEncoder();
-    const keyMaterial = await window.crypto.subtle.importKey(
+    const cryptoApi = this.getCrypto();
+
+    const keyMaterial = await cryptoApi.subtle.importKey(
       'raw',
       enc.encode(secretPassphrase),
       { name: 'PBKDF2' },
@@ -11,7 +23,7 @@ export class ModernCryptoEngine {
       ['deriveKey']
     );
 
-    return window.crypto.subtle.deriveKey(
+    return cryptoApi.subtle.deriveKey(
       {
         name: 'PBKDF2',
         salt: enc.encode('ENIGMA_VS_MODERN_SALT_BLETCHLEY_1944'),
@@ -27,11 +39,12 @@ export class ModernCryptoEngine {
 
   public static async encrypt(plainText: string, secretKey: string): Promise<ModernEncryptedBundle> {
     const key = await this.deriveKey(secretKey);
-    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV recomendado para GCM
+    const cryptoApi = this.getCrypto();
+    const iv = cryptoApi.getRandomValues(new Uint8Array(12)); // 96-bit IV recomendado para GCM
     const encodedData = new TextEncoder().encode(plainText);
 
     // SubtleCrypto concatena a tag de autenticação de 16 bytes no final do buffer
-    const encryptedBuffer = await window.crypto.subtle.encrypt(
+    const encryptedBuffer = await cryptoApi.subtle.encrypt(
       { name: 'AES-GCM', iv, tagLength: 128 },
       key,
       encodedData
@@ -56,6 +69,7 @@ export class ModernCryptoEngine {
   ): Promise<{ success: boolean; decryptedText?: string; error?: string }> {
     try {
       const key = await this.deriveKey(secretKey);
+      const cryptoApi = this.getCrypto();
       const iv = new Uint8Array(atob(bundle.ivBase64).split('').map(c => c.charCodeAt(0)));
       const ct = new Uint8Array(atob(bundle.ciphertextBase64).split('').map(c => c.charCodeAt(0)));
       const tag = new Uint8Array(atob(bundle.tagBase64).split('').map(c => c.charCodeAt(0)));
@@ -65,7 +79,7 @@ export class ModernCryptoEngine {
       fullBuffer.set(ct, 0);
       fullBuffer.set(tag, ct.length);
 
-      const decrypted = await window.crypto.subtle.decrypt(
+      const decrypted = await cryptoApi.subtle.decrypt(
         { name: 'AES-GCM', iv, tagLength: 128 },
         key,
         fullBuffer
