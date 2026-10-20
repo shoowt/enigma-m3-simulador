@@ -11,9 +11,10 @@ import { QRModal } from './components/network/QRModal';
 import { QRScannerModal } from './components/network/QRScannerModal';
 import { CircuitTracerModal } from './components/modals/CircuitTracerModal';
 import { BletchleyParkModal } from './components/modals/BletchleyParkModal';
+import { ReceivedMessageModal } from './components/network/ReceivedMessageModal';
 import { CryptoInspector } from './components/modern/CryptoInspector';
 import { soundEffects } from './audio/soundEffects';
-import { Play, RotateCcw, Send, FileSpreadsheet, Sparkles } from 'lucide-react';
+import { Play, RotateCcw, Send, FileSpreadsheet, Sparkles, KeyRound } from 'lucide-react';
 
 export default function App() {
   // Configuração inicial do Dia D (Dia 6)
@@ -80,6 +81,8 @@ export default function App() {
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
   const [isCircuitModalOpen, setIsCircuitModalOpen] = useState<boolean>(false);
   const [isBletchleyModalOpen, setIsBletchleyModalOpen] = useState<boolean>(false);
+  const [receivedPayload, setReceivedPayload] = useState<EnigmaPayload | null>(null);
+  const [isReceivedModalOpen, setIsReceivedModalOpen] = useState<boolean>(false);
   const [showModernLab, setShowModernLab] = useState<boolean>(true);
   const [mobileTab, setMobileTab] = useState<'machine' | 'crypto'>('machine');
 
@@ -254,6 +257,34 @@ export default function App() {
     setIsTampered(false);
   };
 
+  // Decifrar fita atual (Princípio Recíproco: reseta rotores para posição inicial e passa a cifra)
+  const handleDecryptCurrentTape = () => {
+    if (!cipherTape.trim()) return;
+    soundEffects.playRadioTransmit();
+
+    // Pega a posição inicial da chave do dia
+    const dailyKey = getDailyKey(currentDay);
+    const startPositions = dailyKey.indicatorGroup.split('') as [string, string, string];
+
+    // Reinicia a máquina na posição inicial da chave
+    const enigma = new EnigmaM3({
+      rotorTypes,
+      ringSettings,
+      groundSettings: startPositions,
+      reflector,
+      plugboardPairs
+    });
+    enigmaRef.current = enigma;
+    setPositions(startPositions);
+
+    // Passa a fita cifrada limpa pela máquina
+    const cleanCt = cipherTape.replace(/\s+/g, '');
+    const { cipherText: decrypted } = enigma.processString(cleanCt);
+
+    setPlainText(decrypted);
+    setEnigmaDecrypted(decrypted);
+  };
+
   // Alterna adulteração MITM
   const handleToggleTamper = async () => {
     if (!modernBundle) return;
@@ -327,7 +358,11 @@ export default function App() {
     setModernBundle(bundle);
 
     const secretKey = `ENIGMA_KEY_DAY_${currentDay}_${payload.enigma.rotors.join('')}`;
-    ModernCryptoEngine.decrypt(bundle, secretKey).then(setModernDecrypted);
+    ModernCryptoEngine.decrypt(bundle, secretKey).then(decResult => {
+      setModernDecrypted(decResult);
+      setReceivedPayload(payload);
+      setIsReceivedModalOpen(true);
+    });
   };
 
   // Monta objeto do payload para QR Code
@@ -409,13 +444,23 @@ export default function App() {
               <span>Cifrar</span>
             </button>
             {cipherTape.length > 0 && (
-              <button
-                onClick={handleClearTape}
-                className="p-2 text-zinc-400 hover:text-red-400 bg-[#1a1c22] border border-[#333742] rounded-lg transition-colors shrink-0"
-                title="Limpar texto cifrado e reiniciar estado"
-              >
-                <RotateCcw size={15} />
-              </button>
+              <>
+                <button
+                  onClick={handleDecryptCurrentTape}
+                  className="px-3 py-2 font-mono text-xs font-bold text-amber-300 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-700/60 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
+                  title="Decifrar fita: reseta os rotores para a posição inicial e passa a cifra pela Enigma"
+                >
+                  <KeyRound size={13} className="text-amber-400" />
+                  <span>Decifrar Fita</span>
+                </button>
+                <button
+                  onClick={handleClearTape}
+                  className="p-2 text-zinc-400 hover:text-red-400 bg-[#1a1c22] border border-[#333742] rounded-lg transition-colors shrink-0"
+                  title="Limpar texto cifrado e reiniciar estado"
+                >
+                  <RotateCcw size={15} />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -564,6 +609,19 @@ export default function App() {
         isOpen={isBletchleyModalOpen}
         onClose={() => setIsBletchleyModalOpen(false)}
         cipherText={cipherTape}
+      />
+
+      <ReceivedMessageModal
+        isOpen={isReceivedModalOpen}
+        onClose={() => setIsReceivedModalOpen(false)}
+        payload={receivedPayload}
+        decryptedEnigma={enigmaDecrypted}
+        modernResult={modernDecrypted}
+        onGoToInspector={() => {
+          setIsReceivedModalOpen(false);
+          setShowModernLab(true);
+          setMobileTab('crypto');
+        }}
       />
     </div>
   );
