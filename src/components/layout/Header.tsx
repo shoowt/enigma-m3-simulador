@@ -1,6 +1,6 @@
 import type { Station } from '../../types/crypto';
 import { StationSelector } from './StationSelector';
-import { KeyRound, QrCode, Scan, SplitSquareVertical } from 'lucide-react';
+import { KeyRound, QrCode, Scan, SplitSquareVertical, Zap, Search } from 'lucide-react';
 
 interface HeaderProps {
   currentStation: Station;
@@ -8,6 +8,8 @@ interface HeaderProps {
   onOpenKeySheet: () => void;
   onOpenTransmitQR: () => void;
   onOpenScanQR: () => void;
+  onOpenCircuitModal: () => void;
+  onOpenBletchleyModal: () => void;
   showModernLab: boolean;
   onToggleModernLab: () => void;
   hasCipherData: boolean;
@@ -19,6 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenKeySheet,
   onOpenTransmitQR,
   onOpenScanQR,
+  onOpenCircuitModal,
+  onOpenBletchleyModal,
   showModernLab,
   onToggleModernLab,
   hasCipherData
@@ -84,6 +88,24 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Scan size={13} className="text-emerald-400 shrink-0" />
             <span>Receber</span>
+          </button>
+
+          <button
+            onClick={onOpenCircuitModal}
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-amber-300 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-700/50 transition-colors shadow-sm"
+            title="Visualizar animação do caminho elétrico de 12V pelos rotores e plugboard"
+          >
+            <Zap size={13} className="text-amber-400 shrink-0 animate-pulse" />
+            <span>Circuito 12V</span>
+          </button>
+
+          <button
+            onClick={onOpenBletchleyModal}
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-700/50 transition-colors shadow-sm"
+            title="Ataque de crib de Alan Turing explorando a falha E(x) != x"
+          >
+            <Search size={13} className="text-emerald-400 shrink-0" />
+            <span>Bletchley</span>
           </button>
 
           <button

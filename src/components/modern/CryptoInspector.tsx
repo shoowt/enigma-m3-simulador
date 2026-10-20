@@ -1,6 +1,7 @@
-import type { ModernEncryptedBundle } from '../../types/crypto';
+import type { ModernEncryptedBundle, RotorId, ReflectorId } from '../../types/crypto';
 import { EntropyChart } from './EntropyChart';
 import { TamperLab } from './TamperLab';
+import { WrongKeyProof } from './WrongKeyProof';
 import { BarChart3, Binary, Lock, ShieldCheck } from 'lucide-react';
 
 interface CryptoInspectorProps {
@@ -11,6 +12,11 @@ interface CryptoInspectorProps {
   onToggleTamper: () => void;
   enigmaDecrypted: string;
   modernDecrypted: { success: boolean; decryptedText?: string; error?: string } | null;
+  rotorTypes: [RotorId, RotorId, RotorId];
+  positions: [string, string, string];
+  ringSettings: [number, number, number];
+  reflector: ReflectorId;
+  plugboardPairs: string[];
 }
 
 export const CryptoInspector: React.FC<CryptoInspectorProps> = ({
@@ -20,7 +26,12 @@ export const CryptoInspector: React.FC<CryptoInspectorProps> = ({
   isTampered,
   onToggleTamper,
   enigmaDecrypted,
-  modernDecrypted
+  modernDecrypted,
+  rotorTypes,
+  positions,
+  ringSettings,
+  reflector,
+  plugboardPairs
 }) => {
   // Alan Turing Crib Flaw Check: In Enigma, E(x) != x strictly
   const cleanPlain = plainText.toUpperCase().replace(/[^A-Z]/g, '');
@@ -146,6 +157,16 @@ export const CryptoInspector: React.FC<CryptoInspectorProps> = ({
           </div>
         )}
       </div>
+
+      {/* Prova ao Vivo: Chave Correta vs Chave Incorreta */}
+      <WrongKeyProof
+        currentTape={enigmaCipherText}
+        rotorTypes={rotorTypes}
+        positions={positions}
+        ringSettings={ringSettings}
+        reflector={reflector}
+        plugboardPairs={plugboardPairs}
+      />
 
       {/* Laboratório de Adulteração MITM */}
       <TamperLab

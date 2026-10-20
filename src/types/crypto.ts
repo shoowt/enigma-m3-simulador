@@ -63,3 +63,19 @@ export interface Station {
   role: string;
   color: string;
 }
+
+export interface CircuitTraceStep {
+  stage: string;
+  subLabel: string;
+  charIn: string;
+  charOut: string;
+  description: string;
+}
+
+export interface CircuitTrace {
+  inputChar: string;
+  outputChar: string;
+  rotorPositions: [string, string, string];
+  steps: CircuitTraceStep[];
+}
+

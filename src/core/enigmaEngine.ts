@@ -1,4 +1,4 @@
-import type { MachineSettings, ReflectorId, RotorConfig, RotorId } from '../types/crypto';
+import type { MachineSettings, ReflectorId, RotorConfig, RotorId, CircuitTrace, CircuitTraceStep } from '../types/crypto';
 
 export const ROTOR_SPECS: Record<RotorId, RotorConfig> = {
   'I':   { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ', turnover: ['Q'] },
@@ -247,6 +247,152 @@ export class EnigmaM3 {
     return {
       cipherText: result,
       finalPositions: this.getVisiblePositions()
+    };
+  }
+
+  /**
+   * Executa o rastreamento elétrico passo a passo de um caractere,
+   * permitindo a visualização da corrente elétrica em cada estágio.
+   */
+  public traceChar(char: string): CircuitTrace {
+    const upper = char.toUpperCase();
+    const cloned = this.clone();
+    cloned.step();
+
+    const steps: CircuitTraceStep[] = [];
+    let curSignal = this.charToMod(upper);
+
+    // 1. Tecla
+    steps.push({
+      stage: '1. Teclado',
+      subLabel: 'Tastatur',
+      charIn: upper,
+      charOut: upper,
+      description: `Pino mecânico pressionado fechando circuito de 12V em '${upper}'`
+    });
+
+    // 2. Steckerbrett Ida
+    const pluggedSignal = cloned.plugboardMap[curSignal];
+    const pluggedChar = this.modToChar(pluggedSignal);
+    steps.push({
+      stage: '2. Steckerbrett (Entrada)',
+      subLabel: 'Plugboard',
+      charIn: upper,
+      charOut: pluggedChar,
+      description: upper !== pluggedChar
+        ? `Cabo bilateral troca '${upper}' por '${pluggedChar}'`
+        : `Sem cabo conectado: '${upper}' passa direto`
+    });
+    curSignal = pluggedSignal;
+
+    // 3. Rotor Direito (Ida)
+    const rDirOut = cloned.passForward(curSignal, 2);
+    const rDirChar = this.modToChar(rDirOut);
+    steps.push({
+      stage: `3. Rotor Direito (${cloned.rotorTypes[2]})`,
+      subLabel: `Posição '${cloned.getVisiblePositions()[2]}'`,
+      charIn: this.modToChar(curSignal),
+      charOut: rDirChar,
+      description: `Entrada pelo pino ${curSignal} -> Fiação interna -> Saída pino ${rDirOut}`
+    });
+    curSignal = rDirOut;
+
+    // 4. Rotor Meio (Ida)
+    const rMidOut = cloned.passForward(curSignal, 1);
+    const rMidChar = this.modToChar(rMidOut);
+    steps.push({
+      stage: `4. Rotor Meio (${cloned.rotorTypes[1]})`,
+      subLabel: `Posição '${cloned.getVisiblePositions()[1]}'`,
+      charIn: this.modToChar(curSignal),
+      charOut: rMidChar,
+      description: `Entrada pelo pino ${curSignal} -> Fiação interna -> Saída pino ${rMidOut}`
+    });
+    curSignal = rMidOut;
+
+    // 5. Rotor Esquerdo (Ida)
+    const rLeftOut = cloned.passForward(curSignal, 0);
+    const rLeftChar = this.modToChar(rLeftOut);
+    steps.push({
+      stage: `5. Rotor Esquerdo (${cloned.rotorTypes[0]})`,
+      subLabel: `Posição '${cloned.getVisiblePositions()[0]}'`,
+      charIn: this.modToChar(curSignal),
+      charOut: rLeftChar,
+      description: `Entrada pelo pino ${curSignal} -> Fiação interna -> Saída pino ${rLeftOut}`
+    });
+    curSignal = rLeftOut;
+
+    // 6. Refletor
+    const reflectedChar = cloned.reflectorWiring[curSignal];
+    const reflectedSignal = this.charToMod(reflectedChar);
+    steps.push({
+      stage: `6. Refletor (${cloned.reflector})`,
+      subLabel: 'Umkehrwalze',
+      charIn: this.modToChar(curSignal),
+      charOut: reflectedChar,
+      description: `Involução física: sinal refletido de volta para o eixo (${this.modToChar(curSignal)} ➔ ${reflectedChar})`
+    });
+    curSignal = reflectedSignal;
+
+    // 7. Rotor Esquerdo (Volta)
+    const rLeftBack = cloned.passBackward(curSignal, 0);
+    steps.push({
+      stage: `7. Rotor Esquerdo (${cloned.rotorTypes[0]} - Reverso)`,
+      subLabel: 'Passo de Retorno',
+      charIn: this.modToChar(curSignal),
+      charOut: this.modToChar(rLeftBack),
+      description: `Corrente passa no sentido inverso pela fiação`
+    });
+    curSignal = rLeftBack;
+
+    // 8. Rotor Meio (Volta)
+    const rMidBack = cloned.passBackward(curSignal, 1);
+    steps.push({
+      stage: `8. Rotor Meio (${cloned.rotorTypes[1]} - Reverso)`,
+      subLabel: 'Passo de Retorno',
+      charIn: this.modToChar(curSignal),
+      charOut: this.modToChar(rMidBack),
+      description: `Corrente passa no sentido inverso pela fiação`
+    });
+    curSignal = rMidBack;
+
+    // 9. Rotor Direito (Volta)
+    const rDirBack = cloned.passBackward(curSignal, 2);
+    steps.push({
+      stage: `9. Rotor Direito (${cloned.rotorTypes[2]} - Reverso)`,
+      subLabel: 'Passo de Retorno',
+      charIn: this.modToChar(curSignal),
+      charOut: this.modToChar(rDirBack),
+      description: `Corrente passa no sentido inverso pela fiação`
+    });
+    curSignal = rDirBack;
+
+    // 10. Steckerbrett Saída
+    const plugOutSignal = cloned.plugboardMap[curSignal];
+    const finalChar = this.modToChar(plugOutSignal);
+    steps.push({
+      stage: '10. Steckerbrett (Saída)',
+      subLabel: 'Plugboard Saída',
+      charIn: this.modToChar(curSignal),
+      charOut: finalChar,
+      description: this.modToChar(curSignal) !== finalChar
+        ? `Cabo bilateral troca '${this.modToChar(curSignal)}' por '${finalChar}'`
+        : `Sem cabo: segue direto para o painel de lâmpadas`
+    });
+
+    // 11. Lâmpada
+    steps.push({
+      stage: '11. Glühlampenfeld',
+      subLabel: 'Lâmpada Acesa',
+      charIn: finalChar,
+      charOut: finalChar,
+      description: `Filamento de tungstênio acende a letra final '${finalChar}'`
+    });
+
+    return {
+      inputChar: upper,
+      outputChar: finalChar,
+      rotorPositions: cloned.getVisiblePositions(),
+      steps
     };
   }
 

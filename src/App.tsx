@@ -9,6 +9,8 @@ import { TopLidModal } from './components/skeuomorphic/TopLidModal';
 import { KeySheetModal } from './components/network/KeySheetModal';
 import { QRModal } from './components/network/QRModal';
 import { QRScannerModal } from './components/network/QRScannerModal';
+import { CircuitTracerModal } from './components/modals/CircuitTracerModal';
+import { BletchleyParkModal } from './components/modals/BletchleyParkModal';
 import { CryptoInspector } from './components/modern/CryptoInspector';
 import { soundEffects } from './audio/soundEffects';
 import { Play, RotateCcw, Send, FileSpreadsheet, Sparkles } from 'lucide-react';
@@ -76,6 +78,8 @@ export default function App() {
   const [isKeySheetOpen, setIsKeySheetOpen] = useState<boolean>(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState<boolean>(false);
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
+  const [isCircuitModalOpen, setIsCircuitModalOpen] = useState<boolean>(false);
+  const [isBletchleyModalOpen, setIsBletchleyModalOpen] = useState<boolean>(false);
   const [showModernLab, setShowModernLab] = useState<boolean>(true);
   const [mobileTab, setMobileTab] = useState<'machine' | 'crypto'>('machine');
 
@@ -362,6 +366,8 @@ export default function App() {
         onOpenKeySheet={() => setIsKeySheetOpen(true)}
         onOpenTransmitQR={() => setIsQRModalOpen(true)}
         onOpenScanQR={() => setIsScannerOpen(true)}
+        onOpenCircuitModal={() => setIsCircuitModalOpen(true)}
+        onOpenBletchleyModal={() => setIsBletchleyModalOpen(true)}
         showModernLab={showModernLab}
         onToggleModernLab={() => setShowModernLab(prev => !prev)}
         hasCipherData={cipherTape.length > 0}
@@ -500,6 +506,11 @@ export default function App() {
                 onToggleTamper={handleToggleTamper}
                 enigmaDecrypted={enigmaDecrypted}
                 modernDecrypted={modernDecrypted}
+                rotorTypes={rotorTypes}
+                positions={positions}
+                ringSettings={ringSettings}
+                reflector={reflector}
+                plugboardPairs={plugboardPairs}
               />
             </div>
           )}
@@ -541,6 +552,18 @@ export default function App() {
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScanSuccess={handleScanSuccess}
+      />
+
+      <CircuitTracerModal
+        isOpen={isCircuitModalOpen}
+        onClose={() => setIsCircuitModalOpen(false)}
+        enigma={getOrInitEnigma()}
+      />
+
+      <BletchleyParkModal
+        isOpen={isBletchleyModalOpen}
+        onClose={() => setIsBletchleyModalOpen(false)}
+        cipherText={cipherTape}
       />
     </div>
   );
