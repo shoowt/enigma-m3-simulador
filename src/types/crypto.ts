@@ -33,6 +33,7 @@ export interface EnigmaPayload {
     rotors: [RotorId, RotorId, RotorId];
     rings: [number, number, number];
     ground: [string, string, string];
+    reflector?: ReflectorId;
     plugs: string;
     ct: string;
     plainPreview?: string;

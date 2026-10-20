@@ -36,6 +36,7 @@ export default function App() {
   const sessionStartPositionsRef = useRef<[string, string, string]>(['K', 'A', 'R']);
   const currentPositionsRef = useRef<[string, string, string]>(['K', 'A', 'R']);
   currentPositionsRef.current = positions;
+  const hasStartedTapeRef = useRef<boolean>(false);
   const isReceivingRef = useRef<boolean>(false);
 
   // Instância do Motor Enigma
@@ -111,14 +112,13 @@ export default function App() {
     setPressedKey(upper);
     const enigma = getOrInitEnigma();
 
-    // Se estiver iniciando uma nova mensagem, grava a posição inicial antes do primeiro giro
-    setPlainText(prev => {
-      if (prev.length === 0) {
-        setSessionStartPositions([...currentPositionsRef.current]);
-        sessionStartPositionsRef.current = [...currentPositionsRef.current];
-      }
-      return prev + upper;
-    });
+    // Se estiver iniciando uma nova mensagem, grava a posição inicial SYNCHRONOUSLY antes do giro mecânico
+    if (!hasStartedTapeRef.current) {
+      hasStartedTapeRef.current = true;
+      const initialPos = [...currentPositionsRef.current] as [string, string, string];
+      sessionStartPositionsRef.current = initialPos;
+      setSessionStartPositions(initialPos);
+    }
 
     const { cipherChar, newPositions } = enigma.encryptChar(upper);
 
@@ -126,6 +126,7 @@ export default function App() {
     setPositions(newPositions);
     currentPositionsRef.current = newPositions;
 
+    setPlainText(prev => prev + upper);
     setCipherTape(prev => {
       const clean = (prev.replace(/\s+/g, '') + cipherChar);
       return formatInBlocksOfFive(clean);
@@ -235,6 +236,7 @@ export default function App() {
     const groundChars = key.indicatorGroup.split('') as [string, string, string];
     setPositions(groundChars);
     currentPositionsRef.current = groundChars;
+    hasStartedTapeRef.current = false;
     setSessionStartPositions(groundChars);
     sessionStartPositionsRef.current = groundChars;
 
@@ -253,7 +255,7 @@ export default function App() {
     const newPos = enigma.rotateRotorManually(rotorIndex, delta);
     setPositions([...newPos]);
     currentPositionsRef.current = [...newPos];
-    if (!plainText && !cipherTape) {
+    if (!hasStartedTapeRef.current) {
       setSessionStartPositions([...newPos]);
       sessionStartPositionsRef.current = [...newPos];
     }
@@ -264,9 +266,11 @@ export default function App() {
     if (!batchInput.trim()) return;
     soundEffects.playRadioTransmit();
 
-    if (!plainText) {
-      sessionStartPositionsRef.current = [...positions];
-      setSessionStartPositions([...positions]);
+    if (!hasStartedTapeRef.current) {
+      hasStartedTapeRef.current = true;
+      const initialPos = [...currentPositionsRef.current] as [string, string, string];
+      sessionStartPositionsRef.current = initialPos;
+      setSessionStartPositions(initialPos);
     }
 
     const enigma = getOrInitEnigma();
@@ -284,6 +288,7 @@ export default function App() {
 
   // Resetar / Limpar fita
   const handleClearTape = () => {
+    hasStartedTapeRef.current = false;
     setPlainText('');
     setCipherTape('');
     setModernBundle(null);
@@ -391,6 +396,7 @@ export default function App() {
   // Recebe payload escaneado via QR Code Airgap
   const handleScanSuccess = (payload: EnigmaPayload) => {
     isReceivingRef.current = true;
+    hasStartedTapeRef.current = true;
 
     // Altera estação destinatária para a atual se for correspondente
     const targetStation = STATIONS.find(s => s.id === payload.net.dst) || activeStation;
@@ -403,7 +409,8 @@ export default function App() {
     }
     setCurrentDay(dayNumber);
 
-    // Configura a máquina receptora com os parâmetros da transmissão
+    const incomingReflector = payload.enigma.reflector || reflector || 'UKW-B';
+    setReflector(incomingReflector);
     setRotorTypes(payload.enigma.rotors);
     setRingSettings(payload.enigma.rings);
     const startGround = payload.enigma.ground;
@@ -418,7 +425,7 @@ export default function App() {
       rotorTypes: payload.enigma.rotors,
       ringSettings: payload.enigma.rings,
       groundSettings: startGround,
-      reflector: 'UKW-B',
+      reflector: incomingReflector,
       plugboardPairs: plugsArr
     });
     enigmaRef.current = receiverEnigma;
@@ -431,9 +438,18 @@ export default function App() {
     setPositions(finalPositions);
     currentPositionsRef.current = finalPositions;
 
-    setPlainText(decryptedPlain);
+    // Preserva espaçamento original da mensagem se plainPreview coincidir com a cifra decodificada
+    let finalDecryptedText = decryptedPlain;
+    if (payload.enigma.plainPreview) {
+      const cleanPreview = payload.enigma.plainPreview.toUpperCase().replace(/[^A-Z]/g, '');
+      if (cleanPreview === decryptedPlain) {
+        finalDecryptedText = payload.enigma.plainPreview.toUpperCase();
+      }
+    }
+
+    setPlainText(finalDecryptedText);
     setCipherTape(formatInBlocksOfFive(cleanCt));
-    setEnigmaDecrypted(decryptedPlain);
+    setEnigmaDecrypted(finalDecryptedText);
 
     // Ajusta bundle moderno
     const bundle: ModernEncryptedBundle = {
@@ -465,6 +481,7 @@ export default function App() {
       rotors: rotorTypes,
       rings: ringSettings,
       ground: sessionStartPositionsRef.current,
+      reflector,
       plugs: plugboardPairs.join('-'),
       ct: cipherTape,
       plainPreview: plainText
