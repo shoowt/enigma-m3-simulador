@@ -1,0 +1,45 @@
+@import './styles/skeuomorphic.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0b0c0e;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom scrollbars for retro aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #141518;
+}
+::-webkit-scrollbar-thumb {
+  background: #2f333a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #474d57;
+}
+
+/* Pulse animation for active encrypted status */
+@keyframes signal-glow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.signal-live {
+  animation: signal-glow 2s infinite ease-in-out;
+}
