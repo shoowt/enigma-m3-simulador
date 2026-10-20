@@ -31,6 +31,13 @@ export default function App() {
   const [reflector, setReflector] = useState<ReflectorId>(initialKey.reflector);
   const [plugboardPairs, setPlugboardPairs] = useState<string[]>(initialKey.plugs);
 
+  // Posição inicial de início da transmissão atual (crucial para decifração recíproca)
+  const [sessionStartPositions, setSessionStartPositions] = useState<[string, string, string]>(['K', 'A', 'R']);
+  const sessionStartPositionsRef = useRef<[string, string, string]>(['K', 'A', 'R']);
+  const currentPositionsRef = useRef<[string, string, string]>(['K', 'A', 'R']);
+  currentPositionsRef.current = positions;
+  const isReceivingRef = useRef<boolean>(false);
+
   // Instância do Motor Enigma
   const enigmaRef = useRef<EnigmaM3 | null>(null);
 
@@ -103,12 +110,22 @@ export default function App() {
 
     setPressedKey(upper);
     const enigma = getOrInitEnigma();
+
+    // Se estiver iniciando uma nova mensagem, grava a posição inicial antes do primeiro giro
+    setPlainText(prev => {
+      if (prev.length === 0) {
+        setSessionStartPositions([...currentPositionsRef.current]);
+        sessionStartPositionsRef.current = [...currentPositionsRef.current];
+      }
+      return prev + upper;
+    });
+
     const { cipherChar, newPositions } = enigma.encryptChar(upper);
 
     setLitChar(cipherChar);
     setPositions(newPositions);
+    currentPositionsRef.current = newPositions;
 
-    setPlainText(prev => prev + upper);
     setCipherTape(prev => {
       const clean = (prev.replace(/\s+/g, '') + cipherChar);
       return formatInBlocksOfFive(clean);
@@ -169,6 +186,10 @@ export default function App() {
 
   // Criptografa mensagem moderna em paralelo sempre que o plainText mudar
   useEffect(() => {
+    if (isReceivingRef.current) {
+      isReceivingRef.current = false;
+      return;
+    }
     if (!plainText.trim()) {
       setModernBundle(null);
       setModernDecrypted(null);
@@ -213,6 +234,9 @@ export default function App() {
     setPlugboardPairs([...key.plugs]);
     const groundChars = key.indicatorGroup.split('') as [string, string, string];
     setPositions(groundChars);
+    currentPositionsRef.current = groundChars;
+    setSessionStartPositions(groundChars);
+    sessionStartPositionsRef.current = groundChars;
 
     enigmaRef.current = new EnigmaM3({
       rotorTypes: key.rotors,
@@ -228,6 +252,11 @@ export default function App() {
     const enigma = getOrInitEnigma();
     const newPos = enigma.rotateRotorManually(rotorIndex, delta);
     setPositions([...newPos]);
+    currentPositionsRef.current = [...newPos];
+    if (!plainText && !cipherTape) {
+      setSessionStartPositions([...newPos]);
+      sessionStartPositionsRef.current = [...newPos];
+    }
   };
 
   // Cifrar texto em lote (batch processing)
@@ -235,11 +264,17 @@ export default function App() {
     if (!batchInput.trim()) return;
     soundEffects.playRadioTransmit();
 
+    if (!plainText) {
+      sessionStartPositionsRef.current = [...positions];
+      setSessionStartPositions([...positions]);
+    }
+
     const enigma = getOrInitEnigma();
     const { cipherText, finalPositions } = enigma.processString(batchInput);
 
     setPlainText(prev => (prev ? prev + ' ' : '') + batchInput.toUpperCase());
     setPositions(finalPositions);
+    currentPositionsRef.current = finalPositions;
     setCipherTape(prev => {
       const clean = (prev.replace(/\s+/g, '') + cipherText);
       return formatInBlocksOfFive(clean);
@@ -255,6 +290,13 @@ export default function App() {
     setModernDecrypted(null);
     setEnigmaDecrypted('');
     setIsTampered(false);
+    // Retorna os rotores para a posição de início da fita
+    const startPos = sessionStartPositionsRef.current;
+    if (enigmaRef.current) {
+      enigmaRef.current.setVisiblePositions(startPos);
+    }
+    setPositions(startPos);
+    currentPositionsRef.current = startPos;
   };
 
   // Decifrar fita atual (Princípio Recíproco: reseta rotores para posição inicial e passa a cifra)
@@ -262,27 +304,55 @@ export default function App() {
     if (!cipherTape.trim()) return;
     soundEffects.playRadioTransmit();
 
-    // Pega a posição inicial da chave do dia
-    const dailyKey = getDailyKey(currentDay);
-    const startPositions = dailyKey.indicatorGroup.split('') as [string, string, string];
+    const startPos = sessionStartPositionsRef.current;
 
-    // Reinicia a máquina na posição inicial da chave
+    // Reinicia a máquina na posição inicial da transmissão
     const enigma = new EnigmaM3({
       rotorTypes,
       ringSettings,
-      groundSettings: startPositions,
+      groundSettings: startPos,
       reflector,
       plugboardPairs
     });
     enigmaRef.current = enigma;
-    setPositions(startPositions);
 
     // Passa a fita cifrada limpa pela máquina
-    const cleanCt = cipherTape.replace(/\s+/g, '');
-    const { cipherText: decrypted } = enigma.processString(cleanCt);
+    const cleanCt = cipherTape.replace(/[^A-Z]/g, '');
+    const { cipherText: decrypted, finalPositions } = enigma.processString(cleanCt);
 
+    setPositions(finalPositions);
+    currentPositionsRef.current = finalPositions;
     setPlainText(decrypted);
     setEnigmaDecrypted(decrypted);
+
+    // Abre o modal de transmissão recebida/decifrada para confirmação visual
+    const virtualPayload: EnigmaPayload = {
+      v: 1,
+      net: {
+        src: activeStation.id,
+        dst: activeStation.id,
+        keyId: `1944-06-${String(currentDay).padStart(2, '0')}`,
+        ts: Date.now()
+      },
+      enigma: {
+        rotors: rotorTypes,
+        rings: ringSettings,
+        ground: startPos,
+        plugs: plugboardPairs.join('-'),
+        ct: cipherTape,
+        plainPreview: decrypted
+      },
+      modern: {
+        algo: 'AES-256-GCM',
+        iv: modernBundle?.ivBase64 || '',
+        tag: modernBundle?.tagBase64 || '',
+        ct: modernBundle?.ciphertextBase64 || '',
+        keyDerivation: `PBKDF2_SHA256_DAY_${currentDay}`
+      },
+      tampered: isTampered
+    };
+    setReceivedPayload(virtualPayload);
+    setIsReceivedModalOpen(true);
   };
 
   // Alterna adulteração MITM
@@ -320,32 +390,49 @@ export default function App() {
 
   // Recebe payload escaneado via QR Code Airgap
   const handleScanSuccess = (payload: EnigmaPayload) => {
+    isReceivingRef.current = true;
+
     // Altera estação destinatária para a atual se for correspondente
     const targetStation = STATIONS.find(s => s.id === payload.net.dst) || activeStation;
     setActiveStation(targetStation);
 
+    let dayNumber = currentDay;
+    if (payload.net.keyId) {
+      const match = payload.net.keyId.match(/(\d+)$/);
+      if (match) dayNumber = parseInt(match[1], 10);
+    }
+    setCurrentDay(dayNumber);
+
     // Configura a máquina receptora com os parâmetros da transmissão
     setRotorTypes(payload.enigma.rotors);
     setRingSettings(payload.enigma.rings);
-    setPositions(payload.enigma.ground);
+    const startGround = payload.enigma.ground;
+    setSessionStartPositions(startGround);
+    sessionStartPositionsRef.current = startGround;
+
     const plugsArr = payload.enigma.plugs ? payload.enigma.plugs.split('-') : [];
     setPlugboardPairs(plugsArr);
 
-    enigmaRef.current = new EnigmaM3({
+    // Cria a máquina receptora na posição inicial (ground)
+    const receiverEnigma = new EnigmaM3({
       rotorTypes: payload.enigma.rotors,
       ringSettings: payload.enigma.rings,
-      groundSettings: payload.enigma.ground,
+      groundSettings: startGround,
       reflector: 'UKW-B',
       plugboardPairs: plugsArr
     });
+    enigmaRef.current = receiverEnigma;
 
     // Decifra na Enigma receptora
-    const cloned = enigmaRef.current.clone();
-    const cleanCt = payload.enigma.ct.replace(/\s+/g, '');
-    const { cipherText: decryptedPlain } = cloned.processString(cleanCt);
+    const cleanCt = payload.enigma.ct.replace(/[^A-Z]/g, '');
+    const { cipherText: decryptedPlain, finalPositions } = receiverEnigma.processString(cleanCt);
+
+    // Rotores avançam para a posição final correspondente
+    setPositions(finalPositions);
+    currentPositionsRef.current = finalPositions;
 
     setPlainText(decryptedPlain);
-    setCipherTape(formatInBlocksOfFive(payload.enigma.ct));
+    setCipherTape(formatInBlocksOfFive(cleanCt));
     setEnigmaDecrypted(decryptedPlain);
 
     // Ajusta bundle moderno
@@ -357,7 +444,7 @@ export default function App() {
     };
     setModernBundle(bundle);
 
-    const secretKey = `ENIGMA_KEY_DAY_${currentDay}_${payload.enigma.rotors.join('')}`;
+    const secretKey = `ENIGMA_KEY_DAY_${dayNumber}_${payload.enigma.rotors.join('')}`;
     ModernCryptoEngine.decrypt(bundle, secretKey).then(decResult => {
       setModernDecrypted(decResult);
       setReceivedPayload(payload);
@@ -377,7 +464,7 @@ export default function App() {
     enigma: {
       rotors: rotorTypes,
       rings: ringSettings,
-      ground: positions,
+      ground: sessionStartPositionsRef.current,
       plugs: plugboardPairs.join('-'),
       ct: cipherTape,
       plainPreview: plainText
@@ -520,13 +607,18 @@ export default function App() {
 
             {/* Ações de Transmissão sob a máquina */}
             <div className="flex items-center justify-between gap-2 mt-3 max-w-2xl mx-auto px-1">
-              <button
-                onClick={() => setIsKeySheetOpen(true)}
-                className="flex items-center gap-1 text-[11px] sm:text-xs font-mono text-zinc-400 hover:text-amber-400 transition-colors"
-              >
-                <FileSpreadsheet size={13} />
-                <span>Folha: <strong>Dia {currentDay}</strong></span>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsKeySheetOpen(true)}
+                  className="flex items-center gap-1 text-[11px] sm:text-xs font-mono text-zinc-400 hover:text-amber-400 transition-colors"
+                >
+                  <FileSpreadsheet size={13} />
+                  <span>Folha: <strong>Dia {currentDay}</strong></span>
+                </button>
+                <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline">
+                  Partida: <strong className="text-amber-400 font-mono tracking-wider">{sessionStartPositions.join('')}</strong>
+                </span>
+              </div>
 
               {cipherTape.length > 0 && (
                 <button
