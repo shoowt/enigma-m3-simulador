@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Search,
@@ -7,12 +7,9 @@ import {
   XCircle,
   Sparkles,
   History,
-  Radio,
-  FileText,
   ChevronLeft,
   ChevronRight,
   Zap,
-  AlertTriangle,
   RotateCcw
 } from 'lucide-react';
 import { soundEffects } from '../../audio/soundEffects';
@@ -20,10 +17,8 @@ import { soundEffects } from '../../audio/soundEffects';
 interface BletchleyParkModalProps {
   isOpen: boolean;
   onClose: () => void;
-  cipherText: string;
+  cipherText?: string;
 }
-
-type CipherSource = 'preset' | 'tape' | 'custom';
 
 interface CipherPreset {
   id: string;
@@ -78,16 +73,9 @@ const HISTORICAL_CRIBS = ['WETTER', 'ATAQUE', 'COMANDO', 'BERLIN', 'PANZER', 'KU
 
 export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
   isOpen,
-  onClose,
-  cipherText
+  onClose
 }) => {
-  const tapeClean = useMemo(() => (cipherText || '').toUpperCase().replace(/[^A-Z]/g, ''), [cipherText]);
-
-  // Se a fita atual tiver pelo menos 12 caracteres, inicia na fita; caso contrário, inicia com preset histórico
-  const [sourceMode, setSourceMode] = useState<CipherSource>(() => (tapeClean.length >= 12 ? 'tape' : 'preset'));
   const [selectedPresetId, setSelectedPresetId] = useState<string>('u-boat-weather');
-  const [customCipherInput, setCustomCipherInput] = useState<string>('EKNZXWETTRPKLQZMNBVCXZSAWQETUO');
-  const [tapeExtraNoise, setTapeExtraNoise] = useState<boolean>(false);
   const [cribWord, setCribWord] = useState<string>('WETTER');
   const [selectedOffset, setSelectedOffset] = useState<number>(0);
 
@@ -95,23 +83,7 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
 
   const currentPreset = HISTORICAL_PRESETS.find(p => p.id === selectedPresetId) || HISTORICAL_PRESETS[0];
 
-  // Determina qual é o ciphertext ativo
-  let rawActiveCipher = '';
-  if (sourceMode === 'preset') {
-    rawActiveCipher = currentPreset.ciphertext;
-  } else if (sourceMode === 'tape') {
-    if (tapeClean.length === 0) {
-      rawActiveCipher = 'QJKLZMPXZABWTOPLKJHG';
-    } else if (tapeExtraNoise) {
-      rawActiveCipher = tapeClean + 'XQZMLKJHGTRWAEYUIOP';
-    } else {
-      rawActiveCipher = tapeClean;
-    }
-  } else {
-    rawActiveCipher = customCipherInput || 'EKNZXWETTRPKLQZMNBVCXZSAWQETUO';
-  }
-
-  const cleanCt = rawActiveCipher.toUpperCase().replace(/[^A-Z]/g, '') || 'QJKLZMPXZABWTOPLKJHG';
+  const cleanCt = currentPreset.ciphertext.toUpperCase().replace(/[^A-Z]/g, '');
   const cleanCrib = cribWord.toUpperCase().replace(/[^A-Z]/g, '') || 'WETTER';
 
   const maxOffset = Math.max(0, cleanCt.length - cleanCrib.length);
@@ -202,147 +174,51 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
 
         {/* Conteúdo com rolagem suave */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5">
-          {/* SELEÇÃO DA ORIGEM DA CIFRA */}
+          {/* SELEÇÃO DA TRANSMISSÃO INTERCEPTADA DA WWII */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono font-bold text-emerald-400 uppercase flex items-center gap-1.5">
-                <Radio size={14} /> 1. Mensagem Cifrada Interceptada:
+                <History size={14} /> 1. Transmissão Interceptada da WWII:
               </label>
               <span className="text-[10px] font-mono text-zinc-400">
                 Tamanho da Cifra: <strong className="text-emerald-300">{cleanCt.length} caracteres</strong>
               </span>
             </div>
 
-            {/* Abas de Origem */}
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#0e1110] rounded-xl border border-[#223027]">
-              <button
-                type="button"
-                onClick={() => {
-                  setSourceMode('preset');
-                  setSelectedOffset(0);
-                  soundEffects.playPlugInsert();
-                }}
-                className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                  sourceMode === 'preset'
-                    ? 'bg-emerald-500 text-black shadow-md'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-[#181f1b]'
-                }`}
-              >
-                <History size={13} />
-                <span>Interceptações WWII</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSourceMode('tape');
-                  setSelectedOffset(0);
-                  soundEffects.playPlugInsert();
-                }}
-                className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                  sourceMode === 'tape'
-                    ? 'bg-emerald-500 text-black shadow-md'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-[#181f1b]'
-                }`}
-              >
-                <Radio size={13} />
-                <span>Fita da Enigma ({tapeClean.length || 0})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSourceMode('custom');
-                  setSelectedOffset(0);
-                  soundEffects.playPlugInsert();
-                }}
-                className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                  sourceMode === 'custom'
-                    ? 'bg-emerald-500 text-black shadow-md'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-[#181f1b]'
-                }`}
-              >
-                <FileText size={13} />
-                <span>Cifra Manual</span>
-              </button>
-            </div>
-
-            {/* Painel do Modo Selecionado */}
-            {sourceMode === 'preset' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                {HISTORICAL_PRESETS.map((preset) => {
-                  const isSelected = preset.id === selectedPresetId;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => handleSelectPreset(preset)}
-                      className={`text-left p-2.5 rounded-xl border transition-all ${
-                        isSelected
-                          ? 'bg-emerald-950/40 border-emerald-500 text-emerald-100 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
-                          : 'bg-[#0f1211] border-[#223027] text-zinc-400 hover:border-emerald-800 hover:text-zinc-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-[11px] font-mono font-bold">
-                        <span className={isSelected ? 'text-emerald-300' : 'text-zinc-300'}>
-                          {preset.title}
-                        </span>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#19221d] text-zinc-400 border border-[#27362d]">
-                          Crib: {preset.recommendedCrib}
-                        </span>
-                      </div>
-                      <p className="text-[10px] font-mono text-zinc-500 line-clamp-1 mt-0.5">
-                        {preset.origin} • {preset.date}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {sourceMode === 'tape' && (
-              <div className="p-3 rounded-xl bg-[#0f1211] border border-[#223027] space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-zinc-400">Texto Cifrado pela sua Enigma:</span>
-                  <span className="text-emerald-400 font-bold">{cleanCt}</span>
-                </div>
-                {tapeClean.length < 10 && (
-                  <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-800/40 text-[11px] font-mono text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <AlertTriangle size={14} className="text-amber-400 shrink-0" />
-                      <span>
-                        Sua fita possui apenas {tapeClean.length} caracteres. Com o crib de {cleanCrib.length} letras, há poucas posições de teste.
+            {/* Grid dos 4 Presets Históricos */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              {HISTORICAL_PRESETS.map((preset) => {
+                const isSelected = preset.id === selectedPresetId;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleSelectPreset(preset)}
+                    className={`text-left p-3 rounded-xl border transition-all ${
+                      isSelected
+                        ? 'bg-emerald-950/50 border-emerald-500 text-emerald-100 shadow-[0_0_14px_rgba(16,185,129,0.2)] ring-1 ring-emerald-500/40'
+                        : 'bg-[#0f1211] border-[#223027] text-zinc-400 hover:border-emerald-800 hover:text-zinc-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-mono font-bold">
+                      <span className={isSelected ? 'text-emerald-300 font-bold' : 'text-zinc-300'}>
+                        {isSelected ? '▶ ' : ''}{preset.title}
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#19221d] text-emerald-300 border border-[#27362d]">
+                        Crib: {preset.recommendedCrib}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setTapeExtraNoise(!tapeExtraNoise)}
-                      className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 font-bold shrink-0 text-[10px]"
-                    >
-                      {tapeExtraNoise ? 'Remover Ruído Extra' : '📻 Adicionar Ruído de Rádio'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {sourceMode === 'custom' && (
-              <div className="p-3 rounded-xl bg-[#0f1211] border border-[#223027] space-y-1.5">
-                <label className="text-[11px] font-mono text-zinc-400">
-                  Cole ou digite o texto cifrado interceptado (apenas letras):
-                </label>
-                <input
-                  type="text"
-                  value={customCipherInput}
-                  onChange={(e) => {
-                    setCustomCipherInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''));
-                    setSelectedOffset(0);
-                  }}
-                  placeholder="EX: EKNZXWETTRPKLQZMNBVCXZSAWQETUO"
-                  className="w-full bg-[#161a18] border border-[#2e3e34] rounded-lg px-3 py-2 text-xs font-mono text-emerald-300 font-bold focus:outline-none focus:border-emerald-500 uppercase tracking-widest"
-                />
-              </div>
-            )}
+                    <p className="text-[10px] font-mono text-zinc-500 mt-1">
+                      {preset.origin} • {preset.date}
+                    </p>
+                    <div className="mt-1.5 pt-1 border-t border-[#1a251e] flex items-center justify-between text-[10px] font-mono">
+                      <span className="text-zinc-500">Cifra:</span>
+                      <span className="text-emerald-400 font-bold tracking-wider">{preset.ciphertext.slice(0, 16)}...</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* PALAVRA PROVÁVEL (CRIB) */}
@@ -381,10 +257,10 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setCribWord('WETTER');
+                  setCribWord(currentPreset.recommendedCrib);
                   setSelectedOffset(0);
                 }}
-                title="Restaurar crib padrão"
+                title="Restaurar crib recomendado deste preset"
                 className="p-2 rounded-lg bg-[#1a211d] text-zinc-400 hover:text-emerald-300 border border-[#2e3e34] transition-colors"
               >
                 <RotateCcw size={16} />
