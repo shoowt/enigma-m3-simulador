@@ -33,6 +33,11 @@ export const Plugboard: React.FC<PlugboardProps> = ({
   onResetToDaily
 }) => {
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+  type CableDrag = { pointerId: number; source: string; anchor: string; pair: string | null; startX: number; startY: number; x: number; y: number; moved: boolean; target: string | null };
+  const dragRef = useRef<CableDrag | null>(null);
+  const [drag, setDrag] = useState<CableDrag | null>(null);
+  const suppressClickRef = useRef(false);
+  const [notice, setNotice] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const [socketPositions, setSocketPositions] = useState<Record<string, { x: number; y: number }>>({});
 
@@ -75,6 +80,61 @@ export const Plugboard: React.FC<PlugboardProps> = ({
   // Encontra se a letra já possui conexão
   const getConnectedPair = (char: string): string | null => {
     return pairs.find(p => p.includes(char)) || null;
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>, source: string) => {
+    if (!event.isPrimary || event.button !== 0) return;
+    suppressClickRef.current = false;
+    const rect = containerRef.current!.getBoundingClientRect();
+    const pair = getConnectedPair(source);
+    dragRef.current = {
+      pointerId: event.pointerId, source, anchor: pair ? pair.replace(source, '') : source,
+      pair, startX: event.clientX, startY: event.clientY,
+      x: event.clientX - rect.left, y: event.clientY - rect.top, moved: false, target: null
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setNotice('');
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const current = dragRef.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    const rect = containerRef.current!.getBoundingClientRect();
+    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLButtonElement>('[data-plug-letter]');
+    const target = hit && containerRef.current?.contains(hit) ? hit.dataset.plugLetter! : null;
+    const next = {
+      ...current, x: event.clientX - rect.left, y: event.clientY - rect.top, target,
+      moved: current.moved || Math.hypot(event.clientX - current.startX, event.clientY - current.startY) > 5
+    };
+    dragRef.current = next;
+    if (next.moved) {
+      setSelectedLetter(null);
+      setDrag(next);
+    }
+  };
+
+  const finishDrag = (event: React.PointerEvent<HTMLButtonElement>, cancelled = false) => {
+    const current = dragRef.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    setDrag(null);
+    if (!current.moved) return;
+    suppressClickRef.current = true;
+    if (cancelled) return;
+    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLButtonElement>('[data-plug-letter]');
+    const target = hit && containerRef.current?.contains(hit) ? hit.dataset.plugLetter! : null;
+    if (!target || target === current.source || target === current.anchor) return;
+    if (getConnectedPair(target)) {
+      setNotice('Esse soquete já está ocupado. Escolha uma letra livre.');
+      return;
+    }
+    if (!current.pair && pairs.length >= 10) {
+      setNotice('Limite de 10 cabos atingido. Arraste uma ponta existente para trocar a conexão.');
+      return;
+    }
+    soundEffects.playPlugInsert();
+    onChangePairs([...pairs.filter(pair => pair !== current.pair), `${current.anchor}${target}`]);
+    setNotice(`Cabo conectado: ${current.anchor} ↔ ${target}.`);
   };
 
   const handleSocketClick = (char: string) => {
@@ -153,6 +213,10 @@ export const Plugboard: React.FC<PlugboardProps> = ({
         </div>
       </div>
 
+      <p className="text-[9px] sm:text-[10px] font-mono text-zinc-400 mb-1">
+        Arraste entre letras para conectar. Arraste uma ponta para trocar o cabo; clique para desconectar.
+      </p>
+      <p role="status" className="text-[10px] font-mono text-amber-400" >{notice}</p>
       {selectedLetter && (
         <div className="text-[10px] sm:text-xs font-mono text-amber-400 bg-amber-950/40 border border-amber-800/60 rounded px-2 py-0.5 mb-1 text-center animate-pulse">
           Pino 1 conectado em <strong>[{selectedLetter}]</strong>. Clique na segunda letra para fechar o circuito.
@@ -164,6 +228,7 @@ export const Plugboard: React.FC<PlugboardProps> = ({
         {/* Camada SVG para renderizar as curvas dos cabos */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
           {pairs.map((pair, pIdx) => {
+            if (drag?.moved && drag.pair === pair) return null;
             const charA = pair[0];
             const charB = pair[1];
             const posA = socketPositions[charA];
@@ -193,6 +258,19 @@ export const Plugboard: React.FC<PlugboardProps> = ({
               </g>
             );
           })}
+          {drag?.moved && socketPositions[drag.anchor] && (() => {
+            const start = socketPositions[drag.anchor];
+            const valid = drag.target && drag.target !== drag.anchor && drag.target !== drag.source && !getConnectedPair(drag.target) && (!!drag.pair || pairs.length < 10);
+            const end = valid ? socketPositions[drag.target!] : drag;
+            if (!end) return null;
+            const sag = Math.max(Math.hypot(end.x - start.x, end.y - start.y) * 0.35, 24);
+            const path = `M ${start.x} ${start.y} C ${start.x} ${start.y + sag}, ${end.x} ${end.y + sag}, ${end.x} ${end.y}`;
+            return <g>
+              <path d={path} fill="none" stroke="black" strokeWidth="8" opacity="0.45" />
+              <path d={path} fill="none" stroke={valid ? '#34d399' : '#fbbf24'} strokeWidth="5" strokeLinecap="round" />
+              <circle cx={end.x} cy={end.y} r="5" fill="#a1a1aa" stroke="#18181b" strokeWidth="2" />
+            </g>;
+          })()}
         </svg>
 
         {/* Soquetes das 26 letras */}
@@ -210,7 +288,18 @@ export const Plugboard: React.FC<PlugboardProps> = ({
                     key={char}
                     id={`plug-socket-${char}`}
                     type="button"
-                    onClick={() => handleSocketClick(char)}
+                    data-plug-letter={char}
+                    aria-label={`Soquete ${char}${connectedPair ? `, conectado com ${connectedPair.replace(char, '')}` : ', livre'}`}
+                    onPointerDown={event => handlePointerDown(event, char)}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={event => finishDrag(event)}
+                    onPointerCancel={event => finishDrag(event, true)}
+                    onLostPointerCapture={event => finishDrag(event, true)}
+                    onClick={event => {
+                      if (suppressClickRef.current && event.detail !== 0) return;
+                      handleSocketClick(char);
+                    }}
+                    style={{ touchAction: 'none', userSelect: 'none', cursor: drag ? 'grabbing' : 'grab', outline: drag?.target === char ? '2px solid #fbbf24' : undefined }}
                     className={`plug-socket transition-transform active:scale-95 group ${
                       isSelected
                         ? 'ring-2 ring-amber-400 bg-amber-950/60'
