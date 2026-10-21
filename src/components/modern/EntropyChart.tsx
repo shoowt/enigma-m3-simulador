@@ -4,14 +4,14 @@ import { Cpu, ShieldCheck, Zap } from 'lucide-react';
 export const EntropyChart: React.FC = () => {
   return (
     <div className="p-4 rounded-xl bg-[#131519] border border-[#2b2e36] shadow-md space-y-4">
-      <div className="flex items-center justify-between border-b border-[#262830] pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#262830] pb-2">
         <div className="flex items-center gap-2">
           <Zap size={16} className="text-amber-400" />
           <h4 className="font-mono text-xs font-bold text-zinc-200 tracking-wider uppercase">
             Espaço de Chaves & Resistência a Força Bruta
           </h4>
         </div>
-        <span className="text-[10px] font-mono text-zinc-500">Benchmark Teórico</span>
+        <span className="text-[10px] font-mono text-zinc-500">Modelo teórico</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -28,13 +28,13 @@ export const EntropyChart: React.FC = () => {
               1.58 × 10<sup>20</sup>
             </p>
             <p className="text-[11px] text-zinc-400 font-mono mt-1">
-              Combinações de Rotores, Anéis e Plugboard
+              60 ordens × 26³ posições × 150.738.274.937.250 plugboards. Anéis fixos, refletor B e exatamente 10 cabos.
             </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#2d3038] text-[11px] font-mono text-red-400 flex items-center gap-1.5">
             <Cpu size={14} />
-            <span>Quebra em GPU moderna: <strong>&lt; 3 minutos</strong></span>
+            <span>Busca exaustiva média: <strong>≈ 2,52 anos</strong></span>
           </div>
         </div>
 
@@ -51,18 +51,19 @@ export const EntropyChart: React.FC = () => {
               1.15 × 10<sup>77</sup>
             </p>
             <p className="text-[11px] text-zinc-400 font-mono mt-1">
-              2<sup>256</sup> chaves possíveis (impossível por exaustão)
+              2<sup>256</sup> chaves possíveis; pressupõe chave uniforme e aleatória.
             </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#2d3038] text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
             <ShieldCheck size={14} />
-            <span>Quebra em Supercomputador: <strong>Bilhões de Eras</strong></span>
+            <span>Busca exaustiva média: <strong>≈ 1,83 × 10⁵⁷ anos</strong></span>
           </div>
         </div>
       </div>
 
       <div className="text-[11px] font-mono text-zinc-400 leading-relaxed bg-[#101114] p-2.5 rounded border border-[#22242b]">
+        <p>Hipótese ilustrativa: 10¹² chaves testadas por segundo, tempo médio = N / (2 × taxa). Não é medição deste aplicativo. A senha compartilhada pode ter muito menos entropia que uma chave AES aleatória; PBKDF2 aumenta o custo de cada tentativa, sem criar entropia.</p>
         💡 <strong>Nota Histórica:</strong> Alan Turing e a equipe de Bletchley Park não usaram força bruta ingênua; eles exploraram a falha geométrica do refletor da Enigma que impede que uma letra cifre nela mesma (<em>crib-matching</em> via eletromecânica <em>Bombe</em>).
       </div>
     </div>

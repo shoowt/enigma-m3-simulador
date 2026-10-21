@@ -104,7 +104,7 @@ export const EnigmaCase: React.FC<EnigmaCaseProps> = ({
   };
 
   return (
-    <div className={`wood-cabinet p-1.5 sm:p-2.5 md:p-3 max-w-2xl mx-auto shadow-2xl relative select-none transition-all ${isFitScreen ? 'enigma-fit-screen' : ''} ${isFullscreen ? 'enigma-fullscreen-active' : ''}`}>
+    <div className={`wood-cabinet p-1 sm:p-2.5 md:p-3 max-w-2xl mx-auto shadow-2xl relative select-none transition-all w-full overflow-hidden ${isFitScreen ? 'enigma-fit-screen' : ''} ${isFullscreen ? 'enigma-fullscreen-active' : ''}`}>
       {/* 4 Parafusos de latão nos cantos da madeira */}
       <div className="absolute top-1 left-1 sm:top-2 sm:left-2 brass-screw"></div>
       <div className="absolute top-1 right-1 sm:top-2 sm:right-2 brass-screw"></div>
@@ -112,24 +112,24 @@ export const EnigmaCase: React.FC<EnigmaCaseProps> = ({
       <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 brass-screw"></div>
 
       {/* Chassi de Metal Preto Fosco */}
-      <div className="metal-chassis p-1.5 sm:p-2.5 md:p-3 flex flex-col gap-1.5 sm:gap-2">
+      <div className="metal-chassis p-1 sm:p-2.5 md:p-3 flex flex-col gap-1 sm:gap-2 w-full overflow-hidden">
         {/* Plaqueta Metálica do Fabricante Militar */}
-        <div className="flex items-center justify-between pb-1 sm:pb-1.5 border-b border-[#32363e]">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="metal-plate px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-mono tracking-widest text-amber-300 font-bold uppercase shadow">
-              CHFR.MASCH. ENIGMA M3 • W.1944
+        <div className="flex items-center justify-between pb-1 sm:pb-1.5 border-b border-[#32363e] gap-1">
+          <div className="flex items-center gap-1 min-w-0">
+            <div className="metal-plate px-1.5 sm:px-2.5 py-0.5 text-[9px] sm:text-[11px] font-mono tracking-wider sm:tracking-widest text-amber-300 font-bold uppercase shadow truncate">
+              ENIGMA M3 • W.1944
             </div>
-            <span className="text-[9px] font-mono text-zinc-500 hidden sm:inline">
+            <span className="text-[9px] font-mono text-zinc-500 hidden md:inline">
               NO. A-14983/Heer
             </span>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             {/* Botão Ajustar à Tela (Fita até os Cabos visíveis sem rolagem) */}
             <button
               type="button"
               onClick={() => setIsFitScreen(prev => !prev)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all border ${
+              className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all border ${
                 isFitScreen
                   ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 shadow-sm'
                   : 'bg-[#1e2024] text-zinc-400 hover:text-zinc-200 border-[#393d46]'
@@ -137,7 +137,7 @@ export const EnigmaCase: React.FC<EnigmaCaseProps> = ({
               title={isFitScreen ? 'Modo Ajustado Ativo (fita aos cabos 100% visíveis sem rolagem). Clique para alternar para modo expandido.' : 'Ajustar para toda a máquina (da fita até os cabos) caber na tela sem rolagem'}
             >
               <Minimize2 size={11} className={isFitScreen ? 'text-amber-300' : 'text-zinc-400'} />
-              <span>{isFitScreen ? 'Ajustado à Tela' : 'Ajustar à Tela'}</span>
+              <span className="hidden sm:inline">{isFitScreen ? 'Ajustado à Tela' : 'Ajustar à Tela'}</span>
             </button>
 
             {/* Botão Tela Cheia do Navegador (F11) */}

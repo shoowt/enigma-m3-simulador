@@ -43,7 +43,7 @@ export const Keyboard: React.FC<KeyboardProps> = ({
       </div>
 
       {KEYBOARD_ROWS.map((row, rowIdx) => (
-        <div key={rowIdx} className="flex justify-center gap-1 sm:gap-1.5 w-full">
+        <div key={rowIdx} className="flex justify-center gap-0.5 sm:gap-1.5 w-full">
           {row.map(char => {
             const isPressed = pressedKey === char;
             return (

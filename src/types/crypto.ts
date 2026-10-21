@@ -19,33 +19,18 @@ export interface ModernEncryptedBundle {
   ivBase64: string;
   tagBase64: string;
   tampered: boolean;
+  saltBase64: string;
+  aad?: string;
 }
 
 export interface EnigmaPayload {
-  v: number;
-  net: {
-    src: string;
-    dst: string;
-    keyId: string;
-    ts: number;
-  };
-  enigma: {
-    rotors: [RotorId, RotorId, RotorId];
-    rings: [number, number, number];
-    ground: [string, string, string];
-    reflector?: ReflectorId;
-    plugs: string;
-    ct: string;
-    plainPreview?: string;
-  };
+  v: 2;
+  net: { src: string; dst: string; keyId: string; ts: number };
+  enigma: { ground: [string, string, string]; ct: string };
   modern: {
-    algo: 'AES-256-GCM';
-    iv: string;
-    tag: string;
-    ct: string;
-    keyDerivation: string;
+    algo: 'AES-256-GCM'; iv: string; salt: string; tag: string; ct: string;
+    keyDerivation: 'PBKDF2-SHA256-100000';
   };
-  tampered?: boolean;
 }
 
 export interface DailyKey {

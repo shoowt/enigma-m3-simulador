@@ -29,7 +29,7 @@ export const ReceivedMessageModal: React.FC<ReceivedMessageModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const isTampered = !!payload.tampered || modernResult?.success === false;
+  const isTampered = modernResult?.success === false;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
@@ -76,12 +76,12 @@ export const ReceivedMessageModal: React.FC<ReceivedMessageModalProps> = ({
             )}
             <div className="text-xs font-mono">
               <span className="font-bold block uppercase">
-                {isTampered ? 'Alerta: Pacote Adulterado no Canal (MITM)!' : 'Integridade e Origem Verificadas!'}
+                {isTampered ? 'Falha de autenticação do pacote' : 'Pacote autenticado com a senha compartilhada'}
               </span>
               <span className="text-[11px] text-zinc-400">
                 {isTampered
-                  ? 'O AES-256-GCM detectou violação na tag MAC. A Enigma aceitou o texto sem validação!'
-                  : 'Chave sincronizada: Rotores ' + payload.enigma.rotors.join('-') + ' | Posição ' + payload.enigma.ground.join('') + ' | Anéis ' + payload.enigma.rings.join('-')}
+                  ? 'Senha incorreta ou pacote alterado. A Enigma não verifica integridade.'
+                  : 'Chave local: ' + payload.net.keyId + ' | Posição inicial: ' + payload.enigma.ground.join('')}
               </span>
             </div>
           </div>
@@ -101,7 +101,7 @@ export const ReceivedMessageModal: React.FC<ReceivedMessageModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Terminal size={12} />
-                2. Mensagem Original Decifrada pela Enigma M3
+                2. Saída Enigma M3 (sem autenticação)
               </span>
               <button
                 onClick={handleCopy}

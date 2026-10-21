@@ -30,7 +30,7 @@ interface CipherPreset {
   description: string;
 }
 
-const HISTORICAL_PRESETS: CipherPreset[] = [
+const DIDACTIC_PRESETS: CipherPreset[] = [
   {
     id: 'u-boat-weather',
     title: 'Boletim Meteorológico U-Boat (Atlântico)',
@@ -73,23 +73,25 @@ const HISTORICAL_CRIBS = ['WETTER', 'ATAQUE', 'COMANDO', 'BERLIN', 'PANZER', 'KU
 
 export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  cipherText
 }) => {
+  const [useOwnMessage, setUseOwnMessage] = useState(!!cipherText?.replace(/[^A-Z]/g, ''));
   const [selectedPresetId, setSelectedPresetId] = useState<string>('u-boat-weather');
   const [cribWord, setCribWord] = useState<string>('WETTER');
   const [selectedOffset, setSelectedOffset] = useState<number>(0);
 
   if (!isOpen) return null;
 
-  const currentPreset = HISTORICAL_PRESETS.find(p => p.id === selectedPresetId) || HISTORICAL_PRESETS[0];
+  const currentPreset = DIDACTIC_PRESETS.find(p => p.id === selectedPresetId) || DIDACTIC_PRESETS[0];
 
-  const cleanCt = currentPreset.ciphertext.toUpperCase().replace(/[^A-Z]/g, '');
+  const cleanCt = (useOwnMessage && cipherText?.replace(/[^A-Z]/g, '') ? cipherText : currentPreset.ciphertext).toUpperCase().replace(/[^A-Z]/g, '');
   const cleanCrib = cribWord.toUpperCase().replace(/[^A-Z]/g, '') || 'WETTER';
 
   const maxOffset = Math.max(0, cleanCt.length - cleanCrib.length);
 
   // Calcula todas as posições e colisões (Crib Crash)
-  const analysis = Array.from({ length: maxOffset + 1 }, (_, offset) => {
+  const analysis = Array.from({ length: cleanCrib.length <= cleanCt.length ? maxOffset + 1 : 0 }, (_, offset) => {
     const collisions: { cribIndex: number; char: string; ctIndex: number }[] = [];
 
     for (let j = 0; j < cleanCrib.length; j++) {
@@ -124,6 +126,7 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
   };
 
   const handleSelectPreset = (preset: CipherPreset) => {
+    setUseOwnMessage(false);
     soundEffects.playPlugInsert();
     setSelectedPresetId(preset.id);
     setCribWord(preset.recommendedCrib);
@@ -174,11 +177,13 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
 
         {/* Conteúdo com rolagem suave */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5">
+          <p className="text-xs text-zinc-400">Exemplos fictícios inspirados no contexto histórico. Este modo elimina alinhamentos impossíveis; não recupera sozinho a chave nem implementa a Bombe completa.</p>
+          {cipherText && <button onClick={() => { setUseOwnMessage(true); setSelectedOffset(0); }} className="text-xs text-amber-300 border border-amber-700 rounded p-2">Analisar minha mensagem {useOwnMessage ? '(ativa)' : ''}</button>}
           {/* SELEÇÃO DA TRANSMISSÃO INTERCEPTADA DA WWII */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono font-bold text-emerald-400 uppercase flex items-center gap-1.5">
-                <History size={14} /> 1. Transmissão Interceptada da WWII:
+                <History size={14} /> 1. Cifra para análise:
               </label>
               <span className="text-[10px] font-mono text-zinc-400">
                 Tamanho da Cifra: <strong className="text-emerald-300">{cleanCt.length} caracteres</strong>
@@ -187,7 +192,7 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
 
             {/* Grid dos 4 Presets Históricos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              {HISTORICAL_PRESETS.map((preset) => {
+              {DIDACTIC_PRESETS.map((preset) => {
                 const isSelected = preset.id === selectedPresetId;
                 return (
                   <button
@@ -308,7 +313,7 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
                     : 'bg-emerald-950 text-emerald-300 border border-emerald-800 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
                 }`}
               >
-                {currentAnalysis?.hasCrash ? (
+                {!currentAnalysis ? <span>Crib maior que a cifra: escolha uma palavra menor.</span> : currentAnalysis.hasCrash ? (
                   <>
                     <XCircle size={13} /> COLISÃO DETECTADA (IMPOSSÍVEL)
                   </>
@@ -468,7 +473,7 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
             </div>
 
             {/* Painel de Explicação da Posição Atual */}
-            {currentAnalysis?.hasCrash ? (
+            {!currentAnalysis ? <span>Crib maior que a cifra: escolha uma palavra menor.</span> : currentAnalysis.hasCrash ? (
               <div className="p-3.5 bg-red-950/30 border border-red-800/60 rounded-xl text-xs font-mono text-red-200 flex items-start gap-2.5">
                 <XCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
                 <div className="space-y-1">
@@ -536,7 +541,7 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
               A força bruta em todas as <strong className="text-emerald-300 font-bold">1,58 × 10²⁰ combinações</strong> (158 quintilhões de chaves possíveis) era fisicamente impossível para os recursos da época.
             </p>
             <p className="text-zinc-400">
-              Ao deslizar palavras prováveis (<em>cribs</em>) e descartar imediatamente qualquer posição com colisão de letras, <strong>Alan Turing e Gordon Welchman</strong> reduziram o espaço de busca a um nível que as máquinas eletromecânicas <em>Bombe</em> de Hut 8 conseguiam testar e quebrar em cerca de 20 minutos por mensagem.
+              Ao deslizar palavras prováveis (<em>cribs</em>) e descartar imediatamente qualquer posição com colisão de letras, <strong>Alan Turing e Gordon Welchman</strong> usaram restrições lógicas para reduzir o trabalho das máquinas <em>Bombe</em>. Um alinhamento sem colisões é apenas um candidato, não uma mensagem decifrada.
             </p>
           </div>
         </div>

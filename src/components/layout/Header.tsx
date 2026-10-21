@@ -1,4 +1,5 @@
 import type { Station } from '../../types/crypto';
+import { STATIONS } from '../../core/keySheet';
 import { StationSelector } from './StationSelector';
 import { KeyRound, QrCode, Scan, SplitSquareVertical, Zap, Search } from 'lucide-react';
 
@@ -28,23 +29,42 @@ export const Header: React.FC<HeaderProps> = ({
   hasCipherData
 }) => {
   return (
-    <header className="w-full border-b border-[#202228] bg-[#0c0d10]/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-4 py-1 sm:py-1.5">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
-        {/* Identidade do Projeto */}
-        <div className="shrink-0">
-          <div className="flex items-center gap-1.5">
-            <h1 className="text-xs sm:text-sm font-semibold font-mono text-zinc-100 tracking-wider whitespace-nowrap">
-              ENIGMA M3 SIMULATOR
-            </h1>
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium whitespace-nowrap">
-              VS AES-256
-            </span>
+    <header className="w-full border-b border-[#202228] bg-[#0c0d10]/95 backdrop-blur-md sticky top-0 z-40 px-2 sm:px-4 py-1 sm:py-1.5">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-1.5 sm:gap-4">
+        {/* Identidade do Projeto & Seletor Mobile */}
+        <div className="flex items-center justify-between gap-2 shrink-0">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xs sm:text-sm font-semibold font-mono text-zinc-100 tracking-wider whitespace-nowrap">
+                ENIGMA M3 SIMULATOR
+              </h1>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium whitespace-nowrap">
+                VS AES-256
+              </span>
+            </div>
+            <p className="text-[10px] font-mono text-zinc-400 whitespace-nowrap">
+              Estação:{' '}
+              <strong className="text-amber-400 font-medium">{currentStation.name}</strong>{' '}
+              <span className="text-zinc-500">[{currentStation.callsign}]</span>
+            </p>
           </div>
-          <p className="text-[10px] font-mono text-zinc-400 whitespace-nowrap">
-            Estação:{' '}
-            <strong className="text-amber-400 font-medium">{currentStation.name}</strong>{' '}
-            <span className="text-zinc-500">[{currentStation.callsign}]</span>
-          </p>
+
+          {/* Seletor Mobile de Estação */}
+          <div className="block lg:hidden shrink-0">
+            <select
+              value={currentStation.id}
+              onChange={(e) => {
+                const found = STATIONS.find(s => s.id === e.target.value);
+                if (found) onSelectStation(found);
+              }}
+              className="bg-[#181a1f] border border-[#2e323b] text-amber-300 text-[10px] font-mono rounded px-1.5 py-1 focus:outline-none focus:border-amber-500"
+              aria-label="Selecionar Estação Virtual"
+            >
+              {STATIONS.map(st => (
+                <option key={st.id} value={st.id}>{st.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Seletor de Estações Virtuais */}
@@ -56,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Botões de Ação Rápida */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-1 sm:gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar pb-0.5">
           <button
             onClick={onOpenKeySheet}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-medium text-zinc-300 bg-[#16181d] hover:bg-[#20232a] border border-[#2b2e37] transition-colors shadow-xs whitespace-nowrap"

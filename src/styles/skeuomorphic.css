@@ -267,6 +267,111 @@
   }
 }
 
+/* ========================================================
+   RESPONSIVIDADE MOBILE (SMARTPHONES: 320px a 640px)
+   Garante encaixe perfeito sem rolagem horizontal no celular
+   ======================================================== */
+@media (max-width: 640px) {
+  .wood-cabinet {
+    padding: 0.2rem !important;
+    border-radius: 8px !important;
+    max-width: 100% !important;
+  }
+
+  .metal-chassis {
+    padding: 0.3rem 0.2rem !important;
+    gap: 0.2rem !important;
+    border-radius: 6px !important;
+  }
+
+  .typewriter-key {
+    width: clamp(22px, 8.4vw, 30px) !important;
+    height: clamp(22px, 8.4vw, 30px) !important;
+    font-size: clamp(10px, 3.2vw, 13px) !important;
+    border-width: 1.5px !important;
+    box-shadow: 0 1.5px 0 #0d0e0f, 0 2px 4px rgba(0, 0, 0, 0.75) !important;
+  }
+
+  .lamp-cell {
+    width: clamp(20px, 7.8vw, 26px) !important;
+    height: clamp(20px, 7.8vw, 26px) !important;
+    font-size: clamp(9px, 3.0vw, 12px) !important;
+    border-width: 1px !important;
+  }
+
+  .plug-socket {
+    width: clamp(18px, 7.0vw, 23px) !important;
+    height: clamp(18px, 7.0vw, 23px) !important;
+  }
+
+  .plug-socket span {
+    font-size: clamp(8.5px, 2.7vw, 10px) !important;
+  }
+
+  .rotors-wrapper {
+    padding: 0.2rem 0.4rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .rotor-drum {
+    width: 2.2rem !important;
+    height: 2.4rem !important;
+  }
+
+  .rotor-drum span {
+    font-size: 1.2rem !important;
+  }
+
+  .plug-helper-text {
+    display: none !important;
+  }
+
+  .spacebar-btn {
+    height: 1.45rem !important;
+    font-size: 0.68rem !important;
+    max-width: 85% !important;
+  }
+
+  .fita-output-box {
+    font-size: 0.8rem !important;
+    min-height: 26px !important;
+  }
+}
+
+/* Telas ultra compactas (iPhone SE 1st gen, telas <= 375px) */
+@media (max-width: 380px) {
+  .wood-cabinet {
+    padding: 0.15rem !important;
+  }
+
+  .metal-chassis {
+    padding: 0.2rem 0.15rem !important;
+    gap: 0.15rem !important;
+  }
+
+  .typewriter-key {
+    width: clamp(19px, 7.6vw, 24px) !important;
+    height: clamp(19px, 7.6vw, 24px) !important;
+    font-size: 8.5px !important;
+  }
+
+  .lamp-cell {
+    width: clamp(18px, 7.0vw, 22px) !important;
+    height: clamp(18px, 7.0vw, 22px) !important;
+    font-size: 8.5px !important;
+  }
+
+  .plug-socket {
+    width: clamp(16px, 6.5vw, 20px) !important;
+    height: clamp(16px, 6.5vw, 20px) !important;
+  }
+
+  .plug-socket span {
+    font-size: 8px !important;
+  }
+}
+
+
 
 /* 7. Papel Militar Envelhecido (Key Sheet) */
 .vintage-paper {

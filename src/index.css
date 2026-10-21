@@ -43,3 +43,13 @@ body {
 .signal-live {
   animation: signal-glow 2s infinite ease-in-out;
 }
+
+/* Utilitário para ocultar scrollbars mantendo rolagem touch nativa */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

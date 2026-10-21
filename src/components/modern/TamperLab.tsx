@@ -4,6 +4,7 @@ import { soundEffects } from '../../audio/soundEffects';
 
 interface TamperLabProps {
   isTampered: boolean;
+  disabled?: boolean;
   onToggleTamper: () => void;
   enigmaDecrypted: string;
   modernDecrypted: { success: boolean; decryptedText?: string; error?: string } | null;
@@ -11,6 +12,7 @@ interface TamperLabProps {
 
 export const TamperLab: React.FC<TamperLabProps> = ({
   isTampered,
+  disabled,
   onToggleTamper,
   enigmaDecrypted,
   modernDecrypted
@@ -24,23 +26,24 @@ export const TamperLab: React.FC<TamperLabProps> = ({
 
   return (
     <div className="p-4 rounded-xl bg-[#14161a] border border-[#2d3038] shadow-md space-y-4">
-      <div className="flex items-center justify-between border-b border-[#282a32] pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#282a32] pb-2">
         <div className="flex items-center gap-2">
           <ShieldAlert size={16} className={isTampered ? 'text-red-400' : 'text-amber-400'} />
           <h4 className="font-mono text-xs font-bold text-zinc-200 tracking-wider uppercase">
-            Laboratório de Adulteração MITM (Integridade de Dados)
+            Laboratório de Adulteração MITM (Integridade)
           </h4>
         </div>
         <button
           onClick={handleToggle}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-xs font-bold transition-all shadow-sm active:scale-95 ${
+          disabled={disabled}
+          className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-xs font-bold transition-all shadow-sm active:scale-95 disabled:opacity-40 shrink-0 ${
             isTampered
               ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)]'
               : 'bg-[#22252c] hover:bg-[#2c3039] text-zinc-300 border border-[#3e434f]'
           }`}
         >
           <RefreshCw size={13} className={isTampered ? 'animate-spin' : ''} />
-          <span>{isTampered ? 'Desfazer Adulteração' : 'Adulterar 1 Bit no Trânsito (MITM)'}</span>
+          <span>{isTampered ? 'Desfazer Adulteração' : 'Adulterar cifra (1 letra / 1 bit)'}</span>
         </button>
       </div>
 
@@ -87,16 +90,16 @@ export const TamperLab: React.FC<TamperLabProps> = ({
                   ? 'bg-red-900/60 text-red-200 border border-red-700'
                   : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
               }`}>
-                {isTampered ? 'VIOLAÇÃO DETECTADA' : 'Tag GHASH Válida'}
+                {modernDecrypted ? modernDecrypted.success ? 'TAG VÁLIDA' : 'AUTENTICAÇÃO FALHOU' : 'AGUARDANDO'}
               </span>
             </div>
 
             <div className="p-2.5 rounded bg-[#101114] border border-[#242730] min-h-[50px] font-mono text-xs flex items-center">
-              {isTampered ? (
+              {modernDecrypted?.success === false ? (
                 <div className="text-red-400 flex items-center gap-2">
                   <AlertOctagon size={16} className="shrink-0 text-red-500 animate-pulse" />
                   <span className="font-bold">
-                    TAG DE AUTENTICAÇÃO REJEITADA! Acesso bloqueado.
+                    {modernDecrypted?.error || 'Falha de autenticação. Decifração bloqueada.'}
                   </span>
                 </div>
               ) : (
@@ -114,7 +117,7 @@ export const TamperLab: React.FC<TamperLabProps> = ({
                 🛡️ O algoritmo moderno descarta os dados e impede execução de comandos alterados.
               </span>
             ) : (
-              <span className="text-zinc-500">Tag Galois/Counter Mode de 128 bits garante integridade total.</span>
+              <span className="text-zinc-500">Tag de 128 bits autentica o pacote com a senha compartilhada.</span>
             )}
           </div>
         </div>

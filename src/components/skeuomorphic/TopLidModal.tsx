@@ -30,28 +30,23 @@ export const TopLidModal: React.FC<TopLidModalProps> = ({
   const [selectedRings, setSelectedRings] = React.useState<[number, number, number]>([...ringSettings]);
   const [selectedReflector, setSelectedReflector] = React.useState<ReflectorId>(reflector);
 
-  React.useEffect(() => {
-    setSelectedRotors([...rotorTypes]);
-    setSelectedRings([...ringSettings]);
-    setSelectedReflector(reflector);
-  }, [rotorTypes, ringSettings, reflector, isOpen]);
-
   if (!isOpen) return null;
 
   const handleApply = () => {
+    if (new Set(selectedRotors).size !== 3) return;
     soundEffects.playRotorStep();
     onSave(selectedRotors, selectedRings, selectedReflector);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-2xl bg-[#17191d] border-2 border-[#474b54] rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.95)] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-2xl bg-[#17191d] border-2 border-[#474b54] rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.95)] overflow-hidden max-h-[92vh] flex flex-col my-auto">
         {/* Cabeçalho da Tampa Mecânica */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-[#202227] border-b border-[#343842]">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 bg-[#202227] border-b border-[#343842] shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]"></span>
-            <h3 className="font-mono font-bold text-sm tracking-widest text-zinc-200 uppercase">
+            <h3 className="font-mono font-bold text-xs sm:text-sm tracking-widest text-zinc-200 uppercase">
               Mecanismo Interno & Rotores (Walzenlage)
             </h3>
           </div>
@@ -63,7 +58,7 @@ export const TopLidModal: React.FC<TopLidModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
           <p className="text-xs text-zinc-400 font-mono leading-relaxed">
             Configure a ordem dos 3 rotores no eixo central, a calibração do anel interno (<em>Ringstellung</em>) e o refletor (<em>Umkehrwalze</em>) de acordo com a Folha de Chaves militar do dia.
           </p>
@@ -155,21 +150,22 @@ export const TopLidModal: React.FC<TopLidModalProps> = ({
         </div>
 
         {/* Rodapé de Ações */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-[#1f2126] border-t border-[#343842]">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 bg-[#1f2126] border-t border-[#343842] shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 font-mono text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="px-4 py-2 font-mono text-xs text-zinc-400 hover:text-zinc-200 transition-colors text-center"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleApply}
-            className="flex items-center gap-1.5 px-5 py-2 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded shadow-md transition-all active:scale-95"
+            disabled={new Set(selectedRotors).size !== 3}
+            className="flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded shadow-md transition-all active:scale-95 disabled:opacity-40"
           >
             <Check size={14} />
-            <span>Fechar Tampa & Aplicar Ajustes</span>
+            <span>{new Set(selectedRotors).size !== 3 ? 'Escolha três rotores diferentes' : 'Fechar Tampa & Aplicar Ajustes'}</span>
           </button>
         </div>
       </div>

@@ -26,27 +26,27 @@ export const KeySheetModal: React.FC<KeySheetModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-3xl vintage-paper p-6 sm:p-8 rounded-lg shadow-2xl relative border-4 border-[#7a5c37] overflow-y-auto max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-3xl vintage-paper p-3.5 sm:p-8 rounded-lg shadow-2xl relative border-2 sm:border-4 border-[#7a5c37] overflow-y-auto max-h-[92vh]">
         {/* Carimbo de TOP SECRET Militar */}
-        <div className="absolute top-4 right-14 border-4 border-red-800/80 text-red-800/90 font-black text-xs sm:text-sm px-3 py-1 uppercase tracking-widest rotate-6 pointer-events-none select-none">
+        <div className="hidden sm:block absolute top-4 right-14 border-4 border-red-800/80 text-red-800/90 font-black text-xs sm:text-sm px-3 py-1 uppercase tracking-widest rotate-6 pointer-events-none select-none">
           GEHEIM! • STRENG VERTRAULICH
         </div>
 
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-black/10 text-stone-700 transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 rounded-full hover:bg-black/10 text-stone-700 transition-colors"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
         {/* Título do Documento */}
-        <div className="text-center pb-4 border-b-2 border-stone-800/40 mb-6">
+        <div className="text-center pb-3 sm:pb-4 border-b-2 border-stone-800/40 mb-4 sm:mb-6">
           <h2 className="text-xl sm:text-2xl font-bold tracking-widest uppercase text-stone-900 font-military">
             SCHLÜSSELTAFEL • WEHRMACHT M3
           </h2>
           <p className="text-xs sm:text-sm text-stone-700 mt-1 font-mono">
-            Tabela Mensal de Códigos de Máquina para Comunicações de Rádio (Junho de 1944)
+            Folha demonstrativa: 5 dias de junho de 1944 (configurações fictícias)
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export const KeySheetModal: React.FC<KeySheetModalProps> = ({
           <ul className="list-disc pl-5 space-y-1">
             <li>Em caso de captura iminente da estação, destrua este documento por incineração.</li>
             <li>Nunca reutilize a mesma posição inicial (Grundstellung) em duas transmissões consecutivas.</li>
-            <li>As estações em rede devem sincronizar o dia civil para que a decodificação seja instantânea.</li>
+            <li>Carregue o mesmo dia e os mesmos ajustes nos dois aparelhos. A folha demonstrativa é pública; não use para dados reais.</li>
           </ul>
         </div>
       </div>

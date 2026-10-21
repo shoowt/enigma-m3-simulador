@@ -45,6 +45,7 @@ export const Plugboard: React.FC<PlugboardProps> = ({
   const updateSocketPositions = () => {
     if (!containerRef.current) return;
     const containerRect = containerRef.current.getBoundingClientRect();
+    if (containerRect.width === 0 || containerRect.height === 0) return;
     const newPositions: Record<string, { x: number; y: number }> = {};
 
     PLUGBOARD_ROWS.flat().forEach(char => {
@@ -64,6 +65,7 @@ export const Plugboard: React.FC<PlugboardProps> = ({
   useEffect(() => {
     updateSocketPositions();
     window.addEventListener('resize', updateSocketPositions);
+    window.addEventListener('orientationchange', updateSocketPositions);
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
       ro = new ResizeObserver(() => {
@@ -73,6 +75,7 @@ export const Plugboard: React.FC<PlugboardProps> = ({
     }
     return () => {
       window.removeEventListener('resize', updateSocketPositions);
+      window.removeEventListener('orientationchange', updateSocketPositions);
       if (ro) ro.disconnect();
     };
   }, [pairs]);
@@ -276,7 +279,7 @@ export const Plugboard: React.FC<PlugboardProps> = ({
         {/* Soquetes das 26 letras */}
         <div className="flex flex-col gap-1 sm:gap-1.5 relative z-0">
           {PLUGBOARD_ROWS.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex justify-center gap-1 sm:gap-2 w-full">
+            <div key={rowIdx} className="flex justify-center gap-0.5 sm:gap-2 w-full">
               {row.map(char => {
                 const connectedPair = getConnectedPair(char);
                 const isSelected = selectedLetter === char;

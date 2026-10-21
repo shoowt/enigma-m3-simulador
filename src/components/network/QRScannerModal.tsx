@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useEffectEvent } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { X, Camera, Upload, ClipboardCheck, AlertCircle, Smartphone, RefreshCw, CheckCircle2 } from 'lucide-react';
 import type { EnigmaPayload } from '../../types/crypto';
@@ -8,7 +8,7 @@ import { soundEffects } from '../../audio/soundEffects';
 interface QRScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onScanSuccess: (payload: EnigmaPayload) => void;
+  onScanSuccess: (payload: EnigmaPayload) => void | Promise<void>;
 }
 
 export const QRScannerModal: React.FC<QRScannerModalProps> = ({
@@ -24,28 +24,9 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const nativeCameraInputRef = useRef<HTMLInputElement | null>(null);
   const isStartingRef = useRef(false);
+  const receivingRef = useRef(false);
+  const generationRef = useRef(0);
   const scannerContainerId = 'qr-reader-container';
-
-  useEffect(() => {
-    if (!isOpen) {
-      stopCameraScanner();
-      return;
-    }
-
-    if (activeTab === 'camera') {
-      // Delay pequeno para garantir que o modal e o container #qr-reader-container estejam 100% montados no DOM
-      const timer = setTimeout(() => {
-        startCameraScanner();
-      }, 250);
-      return () => clearTimeout(timer);
-    } else {
-      stopCameraScanner();
-    }
-
-    return () => {
-      stopCameraScanner();
-    };
-  }, [isOpen, activeTab]);
 
   const stopCameraScanner = async () => {
     if (html5QrCodeRef.current) {
@@ -64,6 +45,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   const startCameraScanner = async () => {
     if (isStartingRef.current) return;
     isStartingRef.current = true;
+    const generation = generationRef.current;
     setErrorMessage(null);
 
     try {
@@ -92,10 +74,12 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
             // Frame sem QR code
           }
         );
+        if (generation !== generationRef.current) { await stopCameraScanner(); return; }
         setIsScanning(true);
         setErrorMessage(null);
       } catch (errEnv) {
         console.warn("Tentando fallback de câmera geral após erro no 'environment':", errEnv);
+        if (generation !== generationRef.current) return;
         // Fallback: tenta qualquer câmera disponível (user ou padrão do dispositivo)
         await html5QrCodeRef.current.start(
           { facingMode: 'user' },
@@ -105,6 +89,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           },
           () => {}
         );
+        if (generation !== generationRef.current) { await stopCameraScanner(); return; }
         setIsScanning(true);
         setErrorMessage(null);
       }
@@ -128,17 +113,18 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
     }
   };
 
-  const handlePayloadReceived = (rawText: string) => {
+  const handlePayloadReceived = async (rawText: string) => {
+    if (receivingRef.current) return;
+    receivingRef.current = true;
     try {
       const payload = deserializePayload(rawText);
+      await onScanSuccess(payload);
       soundEffects.playRadioTransmit();
-      stopCameraScanner();
-      onScanSuccess(payload);
+      await stopCameraScanner();
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(`QR Code não reconhecido como transmissão Enigma: ${msg}`);
-    }
+      setErrorMessage(err instanceof Error ? err.message : String(err));
+    } finally { receivingRef.current = false; }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,11 +139,11 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
       try {
         // Tentativa 1: com pré-processamento de imagem
         const decoded = await scanner.scanFile(file, true);
-        handlePayloadReceived(decoded);
+        await handlePayloadReceived(decoded);
       } catch {
         // Tentativa 2: sem pré-processamento (imagem original em alta definição)
         const decoded = await scanner.scanFile(file, false);
-        handlePayloadReceived(decoded);
+        await handlePayloadReceived(decoded);
       }
     } catch {
       setErrorMessage('Nenhum código QR nítido detectado na foto. Aproxime a câmera e certifique-se de que a tela do computador esteja bem iluminada.');
@@ -172,6 +158,14 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
     if (!manualJson.trim()) return;
     handlePayloadReceived(manualJson);
   };
+
+  const startFromEffect = useEffectEvent(() => { void startCameraScanner(); });
+  const stopFromEffect = useEffectEvent(() => { void stopCameraScanner(); });
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'camera') { stopFromEffect(); return; }
+    const timer = setTimeout(() => startFromEffect(), 250);
+    return () => { clearTimeout(timer); generationRef.current += 1; stopFromEffect(); };
+  }, [isOpen, activeTab]);
 
   if (!isOpen) return null;
 

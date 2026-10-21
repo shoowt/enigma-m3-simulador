@@ -2,16 +2,16 @@ import type { ModernEncryptedBundle } from '../types/crypto';
 
 export class ModernCryptoEngine {
   private static getCrypto(): Crypto {
-    if (typeof window !== 'undefined' && window.crypto) {
+    if (typeof window !== 'undefined' && window.crypto?.subtle) {
       return window.crypto;
     }
-    if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+    if (typeof globalThis !== 'undefined' && globalThis.crypto?.subtle) {
       return globalThis.crypto;
     }
-    throw new Error('Web Crypto API não disponível neste ambiente.');
+    throw new Error('Web Crypto indisponível. Abra por HTTPS ou localhost.');
   }
 
-  private static async deriveKey(secretPassphrase: string): Promise<CryptoKey> {
+  private static async deriveKey(secretPassphrase: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
     const enc = new TextEncoder();
     const cryptoApi = this.getCrypto();
 
@@ -26,7 +26,7 @@ export class ModernCryptoEngine {
     return cryptoApi.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: enc.encode('ENIGMA_VS_MODERN_SALT_BLETCHLEY_1944'),
+        salt,
         iterations: 100000,
         hash: 'SHA-256'
       },
@@ -37,15 +37,16 @@ export class ModernCryptoEngine {
     );
   }
 
-  public static async encrypt(plainText: string, secretKey: string): Promise<ModernEncryptedBundle> {
-    const key = await this.deriveKey(secretKey);
+  public static async encrypt(plainText: string, secretKey: string, aad = ''): Promise<ModernEncryptedBundle> {
     const cryptoApi = this.getCrypto();
+    const salt = cryptoApi.getRandomValues(new Uint8Array(16));
+    const key = await this.deriveKey(secretKey, salt);
     const iv = cryptoApi.getRandomValues(new Uint8Array(12)); // 96-bit IV recomendado para GCM
     const encodedData = new TextEncoder().encode(plainText);
 
     // SubtleCrypto concatena a tag de autenticação de 16 bytes no final do buffer
     const encryptedBuffer = await cryptoApi.subtle.encrypt(
-      { name: 'AES-GCM', iv, tagLength: 128 },
+      { name: 'AES-GCM', iv, tagLength: 128, additionalData: new TextEncoder().encode(aad) },
       key,
       encodedData
     );
@@ -59,16 +60,20 @@ export class ModernCryptoEngine {
       ciphertextBase64: btoa(String.fromCharCode(...ctBytes)),
       ivBase64: btoa(String.fromCharCode(...iv)),
       tagBase64: btoa(String.fromCharCode(...tagBytes)),
+      saltBase64: btoa(String.fromCharCode(...salt)),
+      aad,
       tampered: false
     };
   }
 
   public static async decrypt(
     bundle: ModernEncryptedBundle,
-    secretKey: string
+    secretKey: string,
+    aad = bundle.aad || ''
   ): Promise<{ success: boolean; decryptedText?: string; error?: string }> {
     try {
-      const key = await this.deriveKey(secretKey);
+      const salt = new Uint8Array(atob(bundle.saltBase64).split('').map(c => c.charCodeAt(0)));
+      const key = await this.deriveKey(secretKey, salt);
       const cryptoApi = this.getCrypto();
       const iv = new Uint8Array(atob(bundle.ivBase64).split('').map(c => c.charCodeAt(0)));
       const ct = new Uint8Array(atob(bundle.ciphertextBase64).split('').map(c => c.charCodeAt(0)));
@@ -80,7 +85,7 @@ export class ModernCryptoEngine {
       fullBuffer.set(tag, ct.length);
 
       const decrypted = await cryptoApi.subtle.decrypt(
-        { name: 'AES-GCM', iv, tagLength: 128 },
+        { name: 'AES-GCM', iv, tagLength: 128, additionalData: new TextEncoder().encode(aad) },
         key,
         fullBuffer
       );
@@ -92,7 +97,7 @@ export class ModernCryptoEngine {
     } catch {
       return {
         success: false,
-        error: 'CRITICAL INTEGRITY FAILURE: Authentication Tag Mismatch! O pacote foi interceptado ou adulterado (MITM).'
+        error: 'Falha de autenticação: senha incorreta, pacote incompleto ou adulteração. Decifração bloqueada.'
       };
     }
   }

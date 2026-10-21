@@ -9,6 +9,7 @@ interface CryptoInspectorProps {
   enigmaCipherText: string;
   modernBundle: ModernEncryptedBundle | null;
   isTampered: boolean;
+  tamperDisabled?: boolean;
   onToggleTamper: () => void;
   enigmaDecrypted: string;
   modernDecrypted: { success: boolean; decryptedText?: string; error?: string } | null;
@@ -24,6 +25,7 @@ export const CryptoInspector: React.FC<CryptoInspectorProps> = ({
   enigmaCipherText,
   modernBundle,
   isTampered,
+  tamperDisabled,
   onToggleTamper,
   enigmaDecrypted,
   modernDecrypted,
@@ -45,19 +47,16 @@ export const CryptoInspector: React.FC<CryptoInspectorProps> = ({
     }
   }
 
-  // Frequência de caracteres na Enigma
-  const freqMap: Record<string, number> = {};
-  for (const c of cleanEnigma) {
-    freqMap[c] = (freqMap[c] || 0) + 1;
-  }
-  const topChars = Object.entries(freqMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
+  const frequencies = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => ({
+    letter, plain: [...cleanPlain].filter(c => c === letter).length,
+    cipher: [...cleanEnigma].filter(c => c === letter).length
+  }));
+  const peak = Math.max(1, ...frequencies.flatMap(f => [f.plain, f.cipher]));
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 rounded-2xl bg-[#121316] border border-[#2b2e35] shadow-xl text-zinc-200">
       {/* Cabeçalho do Raio-X */}
-      <div className="flex items-center justify-between border-b border-[#242730] pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#242730] pb-3">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
             <Lock size={18} />
@@ -139,23 +138,37 @@ export const CryptoInspector: React.FC<CryptoInspectorProps> = ({
         </div>
 
         <p className="text-xs font-mono text-zinc-400 leading-relaxed">
-          Na Enigma, por projeto físico do refletor (<em>Umkehrwalze</em>), uma letra <strong>NUNCA</strong> pode se transformar nela mesma. Em {minLen} letras digitadas, o total de letras que cifraram em si mesmas foi: <strong className="text-amber-300">{selfCipherCount} de {minLen} (0.00%)</strong>.
+          Na Enigma, por projeto físico do refletor (<em>Umkehrwalze</em>), uma letra <strong>NUNCA</strong> pode se transformar nela mesma. Em {minLen} letras digitadas, o total de letras que cifraram em si mesmas foi: <strong className="text-amber-300">{selfCipherCount} de {minLen} ({minLen ? (100 * selfCipherCount / minLen).toFixed(2) : '0.00'}%)</strong>.
         </p>
 
-        {topChars.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-[#252830]">
-            <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1.5">
-              Frequência de Caracteres no Ciphertext Enigma:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {topChars.map(([ch, count]) => (
-                <div key={ch} className="px-2 py-1 rounded bg-[#0f1013] border border-[#2b2e35] text-xs font-mono">
-                  <span className="text-amber-400 font-bold">{ch}</span>: <span className="text-zinc-300">{count}x</span>
-                </div>
+        <div className="mt-3 pt-3 border-t border-zinc-700">
+          <h5 className="text-xs font-mono mb-2">Análise de frequência A–Z</h5>
+          <p className="text-[10px] text-zinc-400 mb-2">Original em azul · Cifra Enigma em âmbar. Altura proporcional à contagem; letras sem ocorrência também aparecem.</p>
+          <div className="overflow-x-auto">
+            <svg viewBox="0 0 520 220" preserveAspectRatio="none" className="block w-full min-w-[520px] h-[220px]" role="img" aria-label="Histograma de frequência do texto original e da cifra Enigma">
+              {([{ label: 'Original', field: 'plain', color: '#38bdf8' }, { label: 'Cifra Enigma', field: 'cipher', color: '#fbbf24' }] as const).map((series, row) => (
+                <g key={series.field} transform={`translate(0, ${row * 110})`}>
+                  <text x="0" y="12" fill={series.color} fontSize="10" fontFamily="monospace">{series.label}</text>
+                  <line x1="0" y1="90" x2="520" y2="90" stroke="#3f3f46" />
+                  {frequencies.map((f, index) => {
+                    const height = f[series.field] / peak * 68;
+                    return <g key={f.letter} transform={`translate(${index * 20}, 0)`}>
+                      <title>{`${series.label} — ${f.letter}: ${f[series.field]}`}</title>
+                      <rect x="7" y={90 - height} width="6" height={height} fill={series.color} />
+                      <text x="10" y="106" textAnchor="middle" fill="#e4e4e7" fontSize="9" fontFamily="monospace">{f.letter}</text>
+                    </g>;
+                  })}
+                </g>
               ))}
-            </div>
+            </svg>
           </div>
-        )}
+          <details className="text-[10px] text-zinc-400 mt-2"><summary>Ver contagens e percentuais</summary>
+            <table className="w-full text-left"><thead><tr><th>Letra</th><th>Original</th><th>Cifra</th></tr></thead><tbody>
+              {frequencies.map(f => <tr key={f.letter}><td>{f.letter}</td><td>{f.plain} ({cleanPlain.length ? (f.plain / cleanPlain.length * 100).toFixed(1) : 0}%)</td><td>{f.cipher} ({cleanEnigma.length ? (f.cipher / cleanEnigma.length * 100).toFixed(1) : 0}%)</td></tr>)}
+            </tbody></table>
+          </details>
+          <p className="text-[10px] text-zinc-400 mt-2">A substituição muda a cada tecla; a frequência isolada não resolve a Enigma. Textos curtos não permitem concluir que uma distribuição é uniforme.</p>
+        </div>
       </div>
 
       {/* Prova ao Vivo: Chave Correta vs Chave Incorreta */}
@@ -171,6 +184,7 @@ export const CryptoInspector: React.FC<CryptoInspectorProps> = ({
       {/* Laboratório de Adulteração MITM */}
       <TamperLab
         isTampered={isTampered}
+        disabled={tamperDisabled}
         onToggleTamper={onToggleTamper}
         enigmaDecrypted={enigmaDecrypted}
         modernDecrypted={modernDecrypted}

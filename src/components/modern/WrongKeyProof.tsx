@@ -37,6 +37,8 @@ export const WrongKeyProof: React.FC<WrongKeyProofProps> = ({
 
   // Executa os testes de chave correta vs errada
   useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
     // 1. Prepara a cifra base (se o usuário já digitou, usa o que ele digitou; senão usa sample)
     let basePlain = sampleMessage;
     let baseCipher = '';
@@ -82,10 +84,10 @@ export const WrongKeyProof: React.FC<WrongKeyProofProps> = ({
       wrongPositions[2] = nextChar;
     } else if (testMode === 'rotor_swap') {
       // Troca o rotor rápido pelo rotor IV ou I
-      wrongRotors[2] = wrongRotors[2] === 'III' ? 'I' : 'III';
+      [wrongRotors[0], wrongRotors[2]] = [wrongRotors[2], wrongRotors[0]];
     } else if (testMode === 'plug_error') {
       // Erro de 1 cabo no plugboard
-      wrongPlugs = ['AZ', 'BY', 'CX'];
+      wrongPlugs = wrongPlugs.length ? wrongPlugs.slice(1) : ['AZ'];
     }
 
     const wrongMachine = new EnigmaM3({
@@ -104,18 +106,21 @@ export const WrongKeyProof: React.FC<WrongKeyProofProps> = ({
 
     const plainForModern = cleanTape.length >= 3 ? correctRes.cipherText : basePlain;
     ModernCryptoEngine.encrypt(plainForModern || 'TESTE', masterSecret).then(bundle => {
+      if (cancelled) return;
       setSampleBundle(bundle);
 
       // Decifra com chave correta
       ModernCryptoEngine.decrypt(bundle, masterSecret).then(res => {
-        setCorrectAesResult(res.decryptedText || '');
+        if (!cancelled) setCorrectAesResult(res.decryptedText || '');
       });
 
       // Decifra com chave incorreta
       ModernCryptoEngine.decrypt(bundle, wrongSecret).then(res => {
-        setWrongAesResult(res);
+        if (!cancelled) setWrongAesResult(res);
       });
-    });
+    }).catch(() => { if (!cancelled) setWrongAesResult({ success: false, error: 'Criptografia indisponível neste contexto. Use HTTPS ou localhost.' }); });
+    }, 150);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [cleanTape, rotorTypes, positions, ringSettings, reflector, plugboardPairs, testMode]);
 
   const handleModeChange = (mode: 'rotor_offset' | 'rotor_swap' | 'plug_error') => {

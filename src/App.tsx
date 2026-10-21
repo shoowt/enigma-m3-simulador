@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { EnigmaM3 } from './core/enigmaEngine';
 import { ModernCryptoEngine } from './core/modernCrypto';
 import { getDailyKey, STATIONS } from './core/keySheet';
@@ -13,6 +13,7 @@ import { CircuitTracerModal } from './components/modals/CircuitTracerModal';
 import { BletchleyParkModal } from './components/modals/BletchleyParkModal';
 import { ReceivedMessageModal } from './components/network/ReceivedMessageModal';
 import { CryptoInspector } from './components/modern/CryptoInspector';
+import { payloadAAD, bundleFromPayload } from './core/protocolPayload';
 import { soundEffects } from './audio/soundEffects';
 import { Play, RotateCcw, Send, FileSpreadsheet, Sparkles, KeyRound } from 'lucide-react';
 
@@ -22,6 +23,14 @@ export default function App() {
   const initialKey = getDailyKey(defaultDay);
 
   const [activeStation, setActiveStation] = useState<Station>(STATIONS[0]);
+  const [destination, setDestination] = useState(STATIONS[1].id);
+  const [sharedSecret, setSharedSecret] = useState('');
+  const [messageTimestamp, setMessageTimestamp] = useState(() => Date.now());
+  const [networkError, setNetworkError] = useState('');
+  const [receivedMode, setReceivedMode] = useState(false);
+  const [encryptedFor, setEncryptedFor] = useState('');
+  const [encryptedSecret, setEncryptedSecret] = useState('');
+  const [cryptoBusy, setCryptoBusy] = useState(false);
   const [currentDay, setCurrentDay] = useState<number>(defaultDay);
 
   // Estados dos Componentes Mecânicos
@@ -35,9 +44,9 @@ export default function App() {
   const [sessionStartPositions, setSessionStartPositions] = useState<[string, string, string]>(['K', 'A', 'R']);
   const sessionStartPositionsRef = useRef<[string, string, string]>(['K', 'A', 'R']);
   const currentPositionsRef = useRef<[string, string, string]>(['K', 'A', 'R']);
-  currentPositionsRef.current = positions;
+
   const hasStartedTapeRef = useRef<boolean>(false);
-  const isReceivingRef = useRef<boolean>(false);
+
 
   // Instância do Motor Enigma
   const enigmaRef = useRef<EnigmaM3 | null>(null);
@@ -106,6 +115,7 @@ export default function App() {
 
   // Processa caractere único pressionado
   const handleKeyDown = useCallback((char: string) => {
+    if (receivedMode || plainText.length >= 2000) return;
     const upper = char.toUpperCase();
     if (upper < 'A' || upper > 'Z') return;
 
@@ -131,7 +141,7 @@ export default function App() {
       const clean = (prev.replace(/\s+/g, '') + cipherChar);
       return formatInBlocksOfFive(clean);
     });
-  }, [getOrInitEnigma]);
+  }, [getOrInitEnigma, receivedMode, plainText.length]);
 
   const handleKeyUp = useCallback(() => {
     setLitChar(null);
@@ -139,14 +149,15 @@ export default function App() {
   }, []);
 
   const handleSpace = useCallback(() => {
+    if (receivedMode) return;
     setPlainText(prev => prev + ' ');
-  }, []);
+  }, [receivedMode]);
 
   // Atalhos de teclado físico do usuário
   useEffect(() => {
     const onPhysicalKeyDown = (e: KeyboardEvent) => {
       // Ignora se estiver digitando em um input ou textarea
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      if (isTopLidOpen || isKeySheetOpen || isQRModalOpen || isScannerOpen || isCircuitModalOpen || isBletchleyModalOpen || isReceivedModalOpen || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes((e.target as HTMLElement).tagName)) {
         return;
       }
       if (e.repeat) return; // Evita disparo contínuo sem soltar tecla
@@ -167,7 +178,7 @@ export default function App() {
     };
 
     const onPhysicalKeyUp = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      if (isTopLidOpen || isKeySheetOpen || isQRModalOpen || isScannerOpen || isCircuitModalOpen || isBletchleyModalOpen || isReceivedModalOpen || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes((e.target as HTMLElement).tagName)) {
         return;
       }
       const key = e.key.toUpperCase();
@@ -183,30 +194,45 @@ export default function App() {
       window.removeEventListener('keydown', onPhysicalKeyDown);
       window.removeEventListener('keyup', onPhysicalKeyUp);
     };
-  }, [handleKeyDown, handleKeyUp, handleSpace]);
+  }, [handleKeyDown, handleKeyUp, handleSpace, isTopLidOpen, isKeySheetOpen, isQRModalOpen, isScannerOpen, isCircuitModalOpen, isBletchleyModalOpen, isReceivedModalOpen]);
 
-  // Criptografa mensagem moderna em paralelo sempre que o plainText mudar
+  // Recalcula geometria de cabos do Plugboard ao alternar abas no mobile
   useEffect(() => {
-    if (isReceivingRef.current) {
-      isReceivingRef.current = false;
-      return;
+    if (mobileTab === 'machine') {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 60);
+      return () => clearTimeout(timer);
     }
-    if (!plainText.trim()) {
-      setModernBundle(null);
-      setModernDecrypted(null);
-      setEnigmaDecrypted('');
-      return;
-    }
+  }, [mobileTab]);
 
-    const secretKey = `ENIGMA_KEY_DAY_${currentDay}_${rotorTypes.join('')}`;
-    ModernCryptoEngine.encrypt(plainText, secretKey).then(bundle => {
-      setModernBundle(bundle);
-      setIsTampered(false);
-      // Decifra para estado inicial de demonstração
-      ModernCryptoEngine.decrypt(bundle, secretKey).then(setModernDecrypted);
-      setEnigmaDecrypted(plainText);
-    });
-  }, [plainText, currentDay, rotorTypes]);
+  const transmissionHeader = useMemo(() => ({
+    v: 2 as const,
+    net: { src: activeStation.id, dst: destination, keyId: `1944-06-${String(currentDay).padStart(2, '0')}`, ts: messageTimestamp },
+    enigma: { ground: sessionStartPositions, ct: cipherTape.replace(/[^A-Z]/g, '') }
+  }), [activeStation.id, destination, currentDay, messageTimestamp, sessionStartPositions, cipherTape]);
+  const aad = payloadAAD(transmissionHeader);
+
+  useEffect(() => {
+    if (receivedMode || !plainText || sharedSecret.length === 0) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setCryptoBusy(true);
+      try {
+        const bundle = await ModernCryptoEngine.encrypt(plainText, sharedSecret, aad);
+        const result = await ModernCryptoEngine.decrypt(bundle, sharedSecret);
+        if (!cancelled) {
+          setModernBundle(bundle); setModernDecrypted(result);
+          setEncryptedFor(plainText); setEncryptedSecret(sharedSecret);
+          setEnigmaDecrypted(plainText.replace(/[^A-Z]/g, ''));
+          setIsTampered(false); setNetworkError('');
+        }
+      } catch {
+        if (!cancelled) setNetworkError('Criptografia indisponível. Abra por HTTPS ou localhost.');
+      } finally { if (!cancelled) setCryptoBusy(false); }
+    }, 150);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [plainText, sharedSecret, aad, receivedMode]);
 
   // Aplicação de configurações da tampa mecânica (TopLid)
   const handleSaveInternalSettings = (
@@ -214,6 +240,7 @@ export default function App() {
     newRings: [number, number, number],
     newReflector: ReflectorId
   ) => {
+    handleClearTape();
     setRotorTypes(newRotors);
     setRingSettings(newRings);
     setReflector(newReflector);
@@ -228,6 +255,7 @@ export default function App() {
 
   // Carrega chave militar do dia
   const handleApplyDailyKey = (key: DailyKey) => {
+    handleClearTape();
     setCurrentDay(key.day);
     setRotorTypes([...key.rotors]);
     setRingSettings([...key.rings]);
@@ -251,6 +279,7 @@ export default function App() {
 
   // Giro manual das roldanas
   const handleRotateRotorManually = (rotorIndex: 0 | 1 | 2, delta: number) => {
+    if (hasStartedTapeRef.current) handleClearTape();
     const enigma = getOrInitEnigma();
     const newPos = enigma.rotateRotorManually(rotorIndex, delta);
     setPositions([...newPos]);
@@ -263,7 +292,10 @@ export default function App() {
 
   // Cifrar texto em lote (batch processing)
   const handleProcessBatchText = () => {
-    if (!batchInput.trim()) return;
+    if (receivedMode) return;
+    const normalized = batchInput.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z ]/g, '').trim();
+    if (!/[A-Z]/.test(normalized)) return;
+    if (plainText.length + normalized.length > 2000) { setNetworkError('Limite de 2000 caracteres por mensagem.'); return; }
     soundEffects.playRadioTransmit();
 
     if (!hasStartedTapeRef.current) {
@@ -274,9 +306,9 @@ export default function App() {
     }
 
     const enigma = getOrInitEnigma();
-    const { cipherText, finalPositions } = enigma.processString(batchInput);
+    const { cipherText, finalPositions } = enigma.processString(normalized);
 
-    setPlainText(prev => (prev ? prev + ' ' : '') + batchInput.toUpperCase());
+    setPlainText(prev => (prev ? prev + ' ' : '') + normalized);
     setPositions(finalPositions);
     currentPositionsRef.current = finalPositions;
     setCipherTape(prev => {
@@ -288,6 +320,8 @@ export default function App() {
 
   // Resetar / Limpar fita
   const handleClearTape = () => {
+    setReceivedMode(false); setMessageTimestamp(Date.now());
+    setEncryptedFor(''); setCryptoBusy(false); setNetworkError('');
     hasStartedTapeRef.current = false;
     setPlainText('');
     setCipherTape('');
@@ -330,178 +364,56 @@ export default function App() {
     setPlainText(decrypted);
     setEnigmaDecrypted(decrypted);
 
-    // Abre o modal de transmissão recebida/decifrada para confirmação visual
-    const virtualPayload: EnigmaPayload = {
-      v: 1,
-      net: {
-        src: activeStation.id,
-        dst: activeStation.id,
-        keyId: `1944-06-${String(currentDay).padStart(2, '0')}`,
-        ts: Date.now()
-      },
-      enigma: {
-        rotors: rotorTypes,
-        rings: ringSettings,
-        ground: startPos,
-        plugs: plugboardPairs.join('-'),
-        ct: cipherTape,
-        plainPreview: decrypted
-      },
-      modern: {
-        algo: 'AES-256-GCM',
-        iv: modernBundle?.ivBase64 || '',
-        tag: modernBundle?.tagBase64 || '',
-        ct: modernBundle?.ciphertextBase64 || '',
-        keyDerivation: `PBKDF2_SHA256_DAY_${currentDay}`
-      },
-      tampered: isTampered
-    };
-    setReceivedPayload(virtualPayload);
-    setIsReceivedModalOpen(true);
   };
 
-  // Alterna adulteração MITM
-  const handleToggleTamper = async () => {
-    if (!modernBundle) return;
-    const secretKey = `ENIGMA_KEY_DAY_${currentDay}_${rotorTypes.join('')}`;
-
-    if (!isTampered) {
-      // Aplica adulteração no pacote moderno
-      const tampered = ModernCryptoEngine.tamperBundle(modernBundle);
-      setModernBundle(tampered);
-      setIsTampered(true);
-
-      // Decifra no AES: tag de autenticação falhará!
-      const decModern = await ModernCryptoEngine.decrypt(tampered, secretKey);
-      setModernDecrypted(decModern);
-
-      // Na Enigma: altera 1 caractere no texto decifrado sem detecção
-      if (plainText.length > 0) {
-        const chars = plainText.split('');
-        const corruptChar = chars[0] === 'X' ? 'Z' : 'X';
-        chars[0] = corruptChar;
-        setEnigmaDecrypted(chars.join(''));
-      }
-    } else {
-      // Reverte adulteração
-      const cleanBundle = await ModernCryptoEngine.encrypt(plainText, secretKey);
-      setModernBundle(cleanBundle);
-      setIsTampered(false);
-      const decModern = await ModernCryptoEngine.decrypt(cleanBundle, secretKey);
-      setModernDecrypted(decModern);
-      setEnigmaDecrypted(plainText);
-    }
-  };
-
-  // Recebe payload escaneado via QR Code Airgap
-  const handleScanSuccess = (payload: EnigmaPayload) => {
-    isReceivingRef.current = true;
-    hasStartedTapeRef.current = true;
-
-    // Altera estação destinatária para a atual se for correspondente
-    const targetStation = STATIONS.find(s => s.id === payload.net.dst) || activeStation;
-    setActiveStation(targetStation);
-
-    let dayNumber = currentDay;
-    if (payload.net.keyId) {
-      const match = payload.net.keyId.match(/(\d+)$/);
-      if (match) dayNumber = parseInt(match[1], 10);
-    }
-    setCurrentDay(dayNumber);
-
-    const incomingReflector = payload.enigma.reflector || reflector || 'UKW-B';
-    setReflector(incomingReflector);
-    setRotorTypes(payload.enigma.rotors);
-    setRingSettings(payload.enigma.rings);
-    const startGround = payload.enigma.ground;
-    setSessionStartPositions(startGround);
-    sessionStartPositionsRef.current = startGround;
-
-    const plugsArr = payload.enigma.plugs ? payload.enigma.plugs.split('-') : [];
-    setPlugboardPairs(plugsArr);
-
-    // Cria a máquina receptora na posição inicial (ground)
-    const receiverEnigma = new EnigmaM3({
-      rotorTypes: payload.enigma.rotors,
-      ringSettings: payload.enigma.rings,
-      groundSettings: startGround,
-      reflector: incomingReflector,
-      plugboardPairs: plugsArr
-    });
-    enigmaRef.current = receiverEnigma;
-
-    // Decifra na Enigma receptora
-    const cleanCt = payload.enigma.ct.replace(/[^A-Z]/g, '');
-    const { cipherText: decryptedPlain, finalPositions } = receiverEnigma.processString(cleanCt);
-
-    // Rotores avançam para a posição final correspondente
-    setPositions(finalPositions);
-    currentPositionsRef.current = finalPositions;
-
-    // Preserva espaçamento original da mensagem se plainPreview coincidir com a cifra decodificada
-    let finalDecryptedText = decryptedPlain;
-    if (payload.enigma.plainPreview) {
-      const cleanPreview = payload.enigma.plainPreview.toUpperCase().replace(/[^A-Z]/g, '');
-      if (cleanPreview === decryptedPlain) {
-        finalDecryptedText = payload.enigma.plainPreview.toUpperCase();
-      }
-    }
-
-    setPlainText(finalDecryptedText);
-    setCipherTape(formatInBlocksOfFive(cleanCt));
-    setEnigmaDecrypted(finalDecryptedText);
-
-    // Ajusta bundle moderno
-    const bundle: ModernEncryptedBundle = {
-      ciphertextBase64: payload.modern.ct,
-      ivBase64: payload.modern.iv,
-      tagBase64: payload.modern.tag,
-      tampered: !!payload.tampered
-    };
-    setModernBundle(bundle);
-
-    const secretKey = `ENIGMA_KEY_DAY_${dayNumber}_${payload.enigma.rotors.join('')}`;
-    ModernCryptoEngine.decrypt(bundle, secretKey).then(decResult => {
-      setModernDecrypted(decResult);
-      setReceivedPayload(payload);
-      setIsReceivedModalOpen(true);
-    });
-  };
-
-  // Monta objeto do payload para QR Code
-  const currentPayload: EnigmaPayload | null = cipherTape.length > 0 && modernBundle ? {
-    v: 1,
-    net: {
-      src: activeStation.id,
-      dst: activeStation.id === 'U47' ? 'ALPHA' : 'U47',
-      keyId: `1944-06-${String(currentDay).padStart(2, '0')}`,
-      ts: Date.now()
-    },
-    enigma: {
-      rotors: rotorTypes,
-      rings: ringSettings,
-      ground: sessionStartPositionsRef.current,
-      reflector,
-      plugs: plugboardPairs.join('-'),
-      ct: cipherTape,
-      plainPreview: plainText
-    },
-    modern: {
-      algo: 'AES-256-GCM',
-      iv: modernBundle.ivBase64,
-      tag: modernBundle.tagBase64,
-      ct: modernBundle.ciphertextBase64,
-      keyDerivation: `PBKDF2_SHA256_DAY_${currentDay}`
-    },
-    tampered: isTampered
+  const cryptoReady = !!modernBundle && encryptedFor === plainText && encryptedSecret === sharedSecret && modernBundle.aad === aad && !receivedMode;
+  const currentPayload: EnigmaPayload | null = cryptoReady && sharedSecret.length > 0 && cipherTape ? {
+    ...transmissionHeader,
+    enigma: { ...transmissionHeader.enigma, ct: isTampered ? (transmissionHeader.enigma.ct[0] === 'X' ? 'Y' : 'X') + transmissionHeader.enigma.ct.slice(1) : transmissionHeader.enigma.ct },
+    modern: { algo: 'AES-256-GCM', iv: modernBundle!.ivBase64, salt: modernBundle!.saltBase64,
+      tag: modernBundle!.tagBase64, ct: modernBundle!.ciphertextBase64, keyDerivation: 'PBKDF2-SHA256-100000' }
   } : null;
+
+  const handleToggleTamper = async () => {
+    if (!modernBundle || !plainText || cryptoBusy || !cryptoReady) return;
+    setCryptoBusy(true);
+    try {
+      const nextBundle = isTampered ? await ModernCryptoEngine.encrypt(plainText, sharedSecret, modernBundle.aad) : ModernCryptoEngine.tamperBundle(modernBundle);
+      const result = await ModernCryptoEngine.decrypt(nextBundle, sharedSecret);
+      const clean = cipherTape.replace(/[^A-Z]/g, '');
+      const changed = clean ? (clean[0] === 'X' ? 'Y' : 'X') + clean.slice(1) : clean;
+      const machine = new EnigmaM3({ rotorTypes, ringSettings, reflector, plugboardPairs, groundSettings: sessionStartPositions });
+      setEnigmaDecrypted(machine.processString(isTampered ? clean : changed).cipherText);
+      setModernBundle(nextBundle); setModernDecrypted(result); setIsTampered(!isTampered);
+    } finally { setCryptoBusy(false); }
+  };
+
+  const handleScanSuccess = async (payload: EnigmaPayload) => {
+    if (payload.net.dst !== activeStation.id) throw new Error(`Esta mensagem é para ${payload.net.dst}. Selecione essa estação antes de receber.`);
+    if (payload.net.keyId !== `1944-06-${String(currentDay).padStart(2, '0')}`) throw new Error('Carregue na folha de chaves o dia indicado no pacote antes de receber.');
+    if (sharedSecret.length === 0) throw new Error('Informe a senha compartilhada antes de receber.');
+    const bundle = bundleFromPayload(payload);
+    const result = await ModernCryptoEngine.decrypt(bundle, sharedSecret);
+    const receiver = new EnigmaM3({ rotorTypes, ringSettings, reflector, plugboardPairs, groundSettings: payload.enigma.ground });
+    const decrypted = receiver.processString(payload.enigma.ct);
+    setReceivedMode(true); hasStartedTapeRef.current = true;
+    sessionStartPositionsRef.current = payload.enigma.ground;
+    setSessionStartPositions(payload.enigma.ground); enigmaRef.current = receiver;
+    setPositions(decrypted.finalPositions); currentPositionsRef.current = decrypted.finalPositions;
+    setCipherTape(formatInBlocksOfFive(payload.enigma.ct));
+    setPlainText(result.success ? result.decryptedText! : '');
+    setEnigmaDecrypted(decrypted.cipherText); setModernBundle(bundle); setModernDecrypted(result);
+    setIsTampered(!result.success); setReceivedPayload(payload); setIsReceivedModalOpen(true); setCryptoBusy(false);
+  };
+
+  const tracerMachine = useMemo(() => new EnigmaM3({ rotorTypes, ringSettings, groundSettings: positions, reflector, plugboardPairs }), [rotorTypes, ringSettings, positions, reflector, plugboardPairs]);
 
   return (
     <div className="min-h-screen bg-[#0a0b0d] text-zinc-100 flex flex-col font-sans selection:bg-amber-500 selection:text-black">
       {/* Barra de Navegação Superior */}
       <Header
         currentStation={activeStation}
-        onSelectStation={setActiveStation}
+        onSelectStation={station => { handleClearTape(); setActiveStation(station); setDestination(STATIONS.find(st => st.id !== station.id)!.id); }}
         onOpenKeySheet={() => setIsKeySheetOpen(true)}
         onOpenTransmitQR={() => setIsQRModalOpen(true)}
         onOpenScanQR={() => setIsScannerOpen(true)}
@@ -509,11 +421,51 @@ export default function App() {
         onOpenBletchleyModal={() => setIsBletchleyModalOpen(true)}
         showModernLab={showModernLab}
         onToggleModernLab={() => setShowModernLab(prev => !prev)}
-        hasCipherData={cipherTape.length > 0}
+        hasCipherData={!!currentPayload}
       />
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-1 sm:p-2 space-y-1 sm:space-y-1.5 overflow-x-hidden">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-2 py-2 sm:p-4 md:p-6 space-y-2.5 sm:space-y-4">
+        {/* Painel Tático de Rede & AES (Colapsável para economizar espaço no celular) */}
+        <details className="group bg-[#131519] border border-[#2b2e36] rounded-lg text-xs font-mono overflow-hidden">
+          <summary className="p-2 sm:p-2.5 cursor-pointer flex items-center justify-between font-bold text-zinc-300 hover:text-amber-400 select-none list-none">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]"></span>
+              <span className="text-[11px] uppercase tracking-wider text-zinc-200">
+                Rede Air-Gap & Senha AES-256
+              </span>
+              <span className="text-[10px] text-zinc-500 font-normal hidden sm:inline">
+                ({activeStation.name} ➔ {STATIONS.find(st => st.id === destination)?.name || destination})
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px]">
+              <span className={sharedSecret ? 'text-emerald-400 font-normal' : 'text-amber-400 font-normal'}>
+                {sharedSecret ? '🔒 AES Ativo' : '⚠️ Definir Senha AES'}
+              </span>
+              <span className="text-zinc-500 group-open:rotate-180 transition-transform text-xs">▼</span>
+            </div>
+          </summary>
+          <div className="p-3 pt-0 border-t border-[#22252c] grid sm:grid-cols-3 gap-3 mt-2">
+            <label className="text-zinc-300 font-semibold">Esta máquina
+              <select aria-label="Esta máquina" value={activeStation.id} onChange={e => { handleClearTape(); setActiveStation(STATIONS.find(st => st.id === e.target.value)!); setDestination(STATIONS.find(st => st.id !== e.target.value)!.id); }} className="block w-full mt-1 bg-[#0e1013] border border-[#353945] rounded-md p-1.5 text-xs text-amber-300">
+                {STATIONS.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
+              </select>
+            </label>
+            <label className="text-zinc-300 font-semibold">Enviar para
+              <select aria-label="Enviar para" value={destination} onChange={e => setDestination(e.target.value)} className="block w-full mt-1 bg-[#0e1013] border border-[#353945] rounded-md p-1.5 text-xs text-amber-300">
+                {STATIONS.filter(st => st.id !== activeStation.id).map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
+              </select>
+            </label>
+            <label className="text-zinc-300 font-semibold">Senha compartilhada do AES
+              <input type="password" autoComplete="off" aria-label="Senha compartilhada do AES" value={sharedSecret} onChange={e => { if (receivedMode) handleClearTape(); setSharedSecret(e.target.value); }} placeholder="Mesma senha nos dois aparelhos" className="block w-full mt-1 bg-[#0e1013] border border-[#353945] rounded-md p-1.5 text-xs text-amber-300 placeholder-zinc-600 focus:outline-none focus:border-amber-500" />
+            </label>
+            <p className="sm:col-span-3 text-[11px] text-zinc-400">Combine a mesma senha nos dois aparelhos fora do QR. Carregue a mesma chave do dia nas duas máquinas.</p>
+            {sharedSecret.length === 0 && <p className="sm:col-span-3 text-[11px] text-amber-400">⚠️ Informe a senha para habilitar o AES e a transmissão autenticada.</p>}
+            {plainText && !cryptoReady && !receivedMode && sharedSecret.length > 0 && <p role="status" className="sm:col-span-3 text-[11px] text-amber-300">Preparando pacote autenticado…</p>}
+            {receivedMode && <p className="sm:col-span-3 text-[11px] text-emerald-400">Mensagem recebida. Limpe a fita para iniciar outra transmissão.</p>}
+            {networkError && <p role="alert" className="sm:col-span-3 text-[11px] text-red-400">{networkError}</p>}
+          </div>
+        </details>
         {/* Painel Tático de Entrada Rápida de Mensagem (Ultra Compacto) */}
         <div className="bg-[#131519] border border-[#2b2e36] rounded-lg px-2.5 py-1 shadow-sm flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 justify-between">
           <div className="flex items-center gap-2 shrink-0">
@@ -535,12 +487,12 @@ export default function App() {
                 if (e.key === 'Enter') handleProcessBatchText();
               }}
               placeholder="Digitar texto (ex: ATAQUE)..."
-              className="flex-1 sm:w-56 bg-[#0d0e11] border border-[#373a44] rounded-lg px-2.5 py-1 text-xs font-mono text-amber-300 placeholder-zinc-600 focus:outline-none focus:border-amber-500 uppercase"
+              className="flex-1 min-w-0 sm:w-56 bg-[#0d0e11] border border-[#373a44] rounded-lg px-2 sm:px-2.5 py-1 text-xs font-mono text-amber-300 placeholder-zinc-600 focus:outline-none focus:border-amber-500 uppercase"
             />
             <button
               onClick={handleProcessBatchText}
               disabled={!batchInput.trim()}
-              className="px-3 py-1 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1 shrink-0"
+              className="px-2.5 sm:px-3 py-1 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1 shrink-0"
             >
               <Play size={12} fill="currentColor" />
               <span>Cifrar</span>
@@ -549,7 +501,7 @@ export default function App() {
               <>
                 <button
                   onClick={handleDecryptCurrentTape}
-                  className="px-2.5 py-1 font-mono text-xs font-bold text-amber-300 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-700/60 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1 shrink-0"
+                  className="px-2 sm:px-2.5 py-1 font-mono text-xs font-bold text-amber-300 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-700/60 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1 shrink-0"
                   title="Decifrar fita: reseta os rotores para a posição inicial e passa a cifra pela Enigma"
                 >
                   <KeyRound size={12} className="text-amber-400" />
@@ -582,7 +534,10 @@ export default function App() {
           </button>
           <button
             type="button"
-            onClick={() => setMobileTab('crypto')}
+            onClick={() => {
+              setMobileTab('crypto');
+              setShowModernLab(true);
+            }}
             className={`flex-1 py-2 text-xs font-mono font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
               mobileTab === 'crypto'
                 ? 'bg-amber-500 text-black shadow-md'
@@ -611,9 +566,10 @@ export default function App() {
               onKeyDown={handleKeyDown}
               onKeyUp={handleKeyUp}
               onSpace={handleSpace}
-              onChangePlugPairs={setPlugboardPairs}
+              onChangePlugPairs={pairs => { handleClearTape(); setPlugboardPairs(pairs); }}
               onResetPlugToDaily={() => {
                 const daily = getDailyKey(currentDay);
+                handleClearTape();
                 setPlugboardPairs([...daily.plugs]);
                 soundEffects.playPlugInsert();
               }}
@@ -635,7 +591,7 @@ export default function App() {
                 </span>
               </div>
 
-              {cipherTape.length > 0 && (
+              {currentPayload && (
                 <button
                   onClick={() => setIsQRModalOpen(true)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-amber-300 bg-amber-950/40 border border-amber-800/60 hover:bg-amber-900/50 shadow transition-all active:scale-95 animate-pulse"
@@ -648,18 +604,19 @@ export default function App() {
           </div>
 
           {/* Coluna do Raio-X Criptográfico (Split-View Moderno) */}
-          {showModernLab && (
+          {(showModernLab || mobileTab === 'crypto') && (
             <div className={`${mobileTab === 'crypto' ? 'block' : 'hidden lg:block'} lg:col-span-5 space-y-4 sm:space-y-6 w-full`}>
               <CryptoInspector
                 plainText={plainText}
                 enigmaCipherText={cipherTape}
-                modernBundle={modernBundle}
+                modernBundle={receivedMode || cryptoReady ? modernBundle : null}
                 isTampered={isTampered}
                 onToggleTamper={handleToggleTamper}
+                tamperDisabled={cryptoBusy || !cryptoReady || !plainText}
                 enigmaDecrypted={enigmaDecrypted}
-                modernDecrypted={modernDecrypted}
+                modernDecrypted={receivedMode || cryptoReady ? modernDecrypted : null}
                 rotorTypes={rotorTypes}
-                positions={positions}
+                positions={sessionStartPositions}
                 ringSettings={ringSettings}
                 reflector={reflector}
                 plugboardPairs={plugboardPairs}
@@ -678,14 +635,14 @@ export default function App() {
       </footer>
 
       {/* Modais do Sistema */}
-      <TopLidModal
+      {isTopLidOpen && <TopLidModal
         isOpen={isTopLidOpen}
         onClose={() => setIsTopLidOpen(false)}
         rotorTypes={rotorTypes}
         ringSettings={ringSettings}
         reflector={reflector}
         onSave={handleSaveInternalSettings}
-      />
+      />}
 
       <KeySheetModal
         isOpen={isKeySheetOpen}
@@ -709,7 +666,7 @@ export default function App() {
       <CircuitTracerModal
         isOpen={isCircuitModalOpen}
         onClose={() => setIsCircuitModalOpen(false)}
-        enigma={getOrInitEnigma()}
+        enigma={tracerMachine}
       />
 
       <BletchleyParkModal

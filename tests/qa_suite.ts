@@ -10,7 +10,7 @@
 
 import { EnigmaM3, ROTOR_SPECS, REFLECTORS } from '../src/core/enigmaEngine';
 import { ModernCryptoEngine } from '../src/core/modernCrypto';
-import { serializePayload, deserializePayload } from '../src/core/protocolPayload';
+import { serializePayload, deserializePayload, payloadAAD, bundleFromPayload } from '../src/core/protocolPayload';
 import { MONTHLY_KEY_SHEET, getDailyKey, STATIONS } from '../src/core/keySheet';
 import type { EnigmaPayload, RotorId, ReflectorId } from '../src/types/crypto';
 
@@ -292,7 +292,7 @@ async function main() {
     const result = await ModernCryptoEngine.decrypt(bundle, 'CHAVE_ERRADA_123');
     assertEquals(result.success, false, 'Chave errada não pode decifrar AES-GCM');
     assertTrue(
-      result.error?.includes('FAILURE') || result.error?.includes('Mismatch') || result.error?.includes('falha'),
+      result.error?.includes('FAILURE') || result.error?.includes('Mismatch') || result.error?.includes('Falha'),
       'Erro deve indicar falha criptográfica de autenticação'
     );
   });
@@ -313,118 +313,74 @@ async function main() {
   // ----------------------------------------------------------------------------
   console.log('\n\x1b[1m[Suite 3: Protocolo Air-Gap & Sincronização Ponta-a-Ponta]\x1b[0m');
 
-  await runTest('Suite 3', '3.1 Serialização e desserialização de EnigmaPayload', () => {
-    const payload: EnigmaPayload = {
-      v: 1,
-      net: { src: 'ALPHA', dst: 'U47', keyId: '1944-06-06', ts: 1718000000000 },
-      enigma: {
-        rotors: ['III', 'II', 'I'],
-        rings: [1, 1, 1],
-        ground: ['K', 'A', 'R'],
-        reflector: 'UKW-B',
-        plugs: 'BQ-CR-DI',
-        ct: 'YIVEETJIYDDSKGPDB',
-        plainPreview: 'ATAQUE AO AMANHECER'
-      },
-      modern: {
-        algo: 'AES-256-GCM',
-        iv: 'iv123',
-        tag: 'tag456',
-        ct: 'ct789',
-        keyDerivation: 'PBKDF2_SHA256_DAY_6'
-      },
-      tampered: false
-    };
+  const makePayload = async (day = 6): Promise<EnigmaPayload> => {
+    const key = getDailyKey(day);
+    const ground = key.indicatorGroup.split('') as [string, string, string];
+    const sender = new EnigmaM3({ rotorTypes: key.rotors, ringSettings: key.rings, groundSettings: ground, reflector: key.reflector, plugboardPairs: key.plugs });
+    const header = { v: 2 as const, net: { src: 'ALPHA', dst: 'U47', keyId: `1944-06-${String(day).padStart(2, '0')}`, ts: Date.now() }, enigma: { ground, ct: sender.processString('ATAQUEAOAMANHECER').cipherText } };
+    const bundle = await ModernCryptoEngine.encrypt('ATAQUEAOAMANHECER', 'senha-compartilhada-de-teste', payloadAAD(header));
+    return { ...header, modern: { algo: 'AES-256-GCM', iv: bundle.ivBase64, salt: bundle.saltBase64, tag: bundle.tagBase64, ct: bundle.ciphertextBase64, keyDerivation: 'PBKDF2-SHA256-100000' } };
+  };
 
-    const serialized = serializePayload(payload);
-    assertTrue(serialized.length > 50, 'Payload serializado deve ser uma string JSON compacta');
-    const deserialized = deserializePayload(serialized);
-
-    assertEquals(deserialized.net.src, 'ALPHA');
-    assertEquals(deserialized.net.dst, 'U47');
-    assertEquals(deserialized.enigma.ground.join(''), 'KAR');
-    assertEquals(deserialized.enigma.reflector, 'UKW-B');
-    assertEquals(deserialized.enigma.ct, 'YIVEETJIYDDSKGPDB');
+  await runTest('Suite 3', '3.1 Protocolo v2 não transporta texto original, senha ou configuração secreta', async () => {
+    const p = await makePayload();
+    const raw = serializePayload(p);
+    const parsed = deserializePayload(raw);
+    assertEquals(Object.keys(parsed.enigma).sort().join(','), 'ct,ground');
+    for (const forbidden of ['ATAQUEAOAMANHECER', 'senha-compartilhada-de-teste', 'plainPreview', 'rotors', 'rings', 'plugs']) assertTrue(!raw.includes(forbidden), `Vazamento: ${forbidden}`);
   });
 
-  await runTest('Suite 3', '3.2 Transmissão e Recepção Ponta-a-Ponta em TODOS os dias da folha de chaves', () => {
-    const testMessage = 'SUBMARINO U47 RETORNAR A BASE';
-    const cleanPlain = testMessage.replace(/[^A-Z]/g, '');
-
-    for (const daily of MONTHLY_KEY_SHEET) {
-      const senderGround = daily.indicatorGroup.split('') as [string, string, string];
-
-      // Emissor cifra
-      const sender = new EnigmaM3({
-        rotorTypes: daily.rotors,
-        ringSettings: daily.rings,
-        groundSettings: senderGround,
-        reflector: daily.reflector,
-        plugboardPairs: daily.plugs
-      });
-
-      const { cipherText } = sender.processString(cleanPlain);
-
-      // Simula transmissão de QR Code
-      const payload: EnigmaPayload = {
-        v: 1,
-        net: { src: 'ALPHA', dst: 'U47', keyId: `1944-06-${String(daily.day).padStart(2, '0')}`, ts: Date.now() },
-        enigma: {
-          rotors: daily.rotors,
-          rings: daily.rings,
-          ground: senderGround, // Posição inicial travada síncrona
-          reflector: daily.reflector,
-          plugs: daily.plugs.join('-'),
-          ct: cipherText,
-          plainPreview: testMessage
-        },
-        modern: { algo: 'AES-256-GCM', iv: 'a', tag: 'b', ct: 'c', keyDerivation: 'k' }
-      };
-
-      const rawQR = serializePayload(payload);
-      const parsed = deserializePayload(rawQR);
-
-      // Receptor decifra
-      const receiver = new EnigmaM3({
-        rotorTypes: parsed.enigma.rotors,
-        ringSettings: parsed.enigma.rings,
-        groundSettings: parsed.enigma.ground,
-        reflector: parsed.enigma.reflector || 'UKW-B',
-        plugboardPairs: parsed.enigma.plugs ? parsed.enigma.plugs.split('-') : []
-      });
-
-      const cleanCt = parsed.enigma.ct.replace(/[^A-Z]/g, '');
-      const { cipherText: decrypted } = receiver.processString(cleanCt);
-
-      assertEquals(decrypted, cleanPlain, `Falha de decifração no Dia ${daily.day}`);
+  await runTest('Suite 3', '3.2 Transmissão Enigma e AES real em todos os dias cadastrados', async () => {
+    for (const key of MONTHLY_KEY_SHEET) {
+      const p = deserializePayload(serializePayload(await makePayload(key.day)));
+      const receiver = new EnigmaM3({ rotorTypes: key.rotors, ringSettings: key.rings, groundSettings: p.enigma.ground, reflector: key.reflector, plugboardPairs: key.plugs });
+      assertEquals(receiver.processString(p.enigma.ct).cipherText, 'ATAQUEAOAMANHECER');
+      const result = await ModernCryptoEngine.decrypt(bundleFromPayload(p), 'senha-compartilhada-de-teste');
+      assertTrue(result.success); assertEquals(result.decryptedText, 'ATAQUEAOAMANHECER');
     }
   });
 
-  await runTest('Suite 3', '3.3 Mensagem longa (>100 caracteres) com múltiplos turnovers', () => {
-    const longMsg = 'NA SEGUNDA GUERRA MUNDIAL A MAQUINA ENIGMA PERMITIA TROCAR MENSAGENS CIFRADAS MESMO COM O CANAL INTERCEPTADO';
-    const cleanMsg = longMsg.replace(/[^A-Z]/g, '');
+  await runTest('Suite 3', '3.3 Cabeçalho, posição e cifra Enigma adulterados são rejeitados pelo AES', async () => {
+    const original = await makePayload();
+    for (const mutate of [
+      (p: EnigmaPayload) => { p.net.src = 'OUTPOST'; },
+      (p: EnigmaPayload) => { p.net.dst = 'BLETCHLEY'; },
+      (p: EnigmaPayload) => { p.net.keyId = '1944-06-14'; },
+      (p: EnigmaPayload) => { p.net.ts += 1; },
+      (p: EnigmaPayload) => { p.enigma.ground[0] = 'Z'; },
+      (p: EnigmaPayload) => { p.enigma.ct = (p.enigma.ct[0] === 'X' ? 'Y' : 'X') + p.enigma.ct.slice(1); }
+    ]) {
+      const p = structuredClone(original); mutate(p);
+      const result = await ModernCryptoEngine.decrypt(bundleFromPayload(p), 'senha-compartilhada-de-teste');
+      assertEquals(result.success, false);
+    }
+  });
 
+  await runTest('Suite 3', '3.4 Pacotes truncados, versão antiga, campos secretos e Base64 inválido são recusados', async () => {
+    const original = await makePayload();
+    for (const raw of ['{', '{}', JSON.stringify({ ...original, v: 1 }), JSON.stringify({ ...original, enigma: { ...original.enigma, plainPreview: 'segredo' } }), JSON.stringify({ ...original, modern: { ...original.modern, iv: 'x' } }), JSON.stringify({ ...original, net: { ...original.net, dst: 'inexistente' } }), JSON.stringify({ ...original, enigma: { ...original.enigma, ground: ['A'] } })]) {
+      let rejected = false; try { deserializePayload(raw); } catch { rejected = true; } assertTrue(rejected, 'Pacote inválido aceito');
+    }
+  });
+
+  await runTest('Suite 3', '3.5 Salt e IV variam entre mensagens com a mesma senha', async () => {
+    const a = await makePayload(); const b = await makePayload();
+    assertTrue(a.modern.salt !== b.modern.salt); assertTrue(a.modern.iv !== b.modern.iv);
+  });
+
+  await runTest('Suite 3', '3.6 Adulteração da cifra Enigma altera a saída real sem autenticação', () => {
     const key = getDailyKey(6);
-    const sender = new EnigmaM3({
-      rotorTypes: key.rotors,
-      ringSettings: key.rings,
-      groundSettings: ['K', 'A', 'R'],
-      reflector: key.reflector,
-      plugboardPairs: key.plugs
-    });
+    const settings = { rotorTypes: key.rotors, ringSettings: key.rings, groundSettings: ['K', 'A', 'R'] as [string, string, string], reflector: key.reflector, plugboardPairs: key.plugs };
+    const ct = new EnigmaM3(settings).processString('ATAQUEAOAMANHECER').cipherText;
+    const changed = (ct[0] === 'X' ? 'Y' : 'X') + ct.slice(1);
+    const output = new EnigmaM3(settings).processString(changed).cipherText;
+    assertTrue(output[0] !== 'A'); assertEquals(output.slice(1), 'TAQUEAOAMANHECER');
+  });
 
-    const { cipherText } = sender.processString(cleanMsg);
-
-    const receiver = new EnigmaM3({
-      rotorTypes: key.rotors,
-      ringSettings: key.rings,
-      groundSettings: ['K', 'A', 'R'],
-      reflector: key.reflector,
-      plugboardPairs: key.plugs
-    });
-
-    const { cipherText: decrypted } = receiver.processString(cipherText);
-    assertEquals(decrypted, cleanMsg, 'Mensagem longa com múltiplos passos de rotores deve decifrar 100%');
+  await runTest('Suite 3', '3.7 Vetor conhecido Enigma I-II-III / B / AAA / anéis 01', () => {
+    const settings = { rotorTypes: ['I', 'II', 'III'] as [RotorId, RotorId, RotorId], ringSettings: [1, 1, 1] as [number, number, number], groundSettings: ['A', 'A', 'A'] as [string, string, string], reflector: 'UKW-B' as ReflectorId, plugboardPairs: [] };
+    assertEquals(new EnigmaM3(settings).processString('AAAAA').cipherText, 'BDZGO');
+    assertEquals(new EnigmaM3(settings).processString('HELLOWORLD').cipherText, 'ILBDAAMTAZ');
   });
 
   // ----------------------------------------------------------------------------
