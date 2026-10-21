@@ -50,7 +50,7 @@ export const QRModal: React.FC<QRModalProps> = ({
         </div>
 
         {/* Corpo do Modal */}
-        <div className="p-4 sm:p-6 flex flex-col items-center gap-4 sm:gap-5 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 flex flex-col items-center gap-4 sm:gap-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
           {/* Identificação de Rota */}
           <div className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#0e0f12] border border-[#262830] font-mono text-xs">
             <div>

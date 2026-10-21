@@ -61,8 +61,8 @@ export const ReceivedMessageModal: React.FC<ReceivedMessageModalProps> = ({
           </button>
         </div>
 
-        {/* Corpo */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
+        {/* Corpo com Scroll Suave no Celular */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 overscroll-contain space-y-4">
           {/* Card de Status de Autenticidade */}
           <div className={`p-3 rounded-xl border flex items-center gap-3 ${
             isTampered

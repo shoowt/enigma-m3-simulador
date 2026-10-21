@@ -170,8 +170,8 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-lg bg-[#15171b] border-2 border-[#3c404a] rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-lg bg-[#15171b] border-2 border-[#3c404a] rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden max-h-[92vh] flex flex-col my-auto">
         {/* Container invisível mas com layout no DOM para decodificação de imagem/foto */}
         <div
           id="qr-temp-file-reader"
@@ -189,10 +189,10 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         />
 
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-[#1e2026] border-b border-[#30333d]">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 bg-[#1e2026] border-b border-[#30333d] shrink-0">
           <div className="flex items-center gap-2">
             <Camera size={16} className="text-amber-400" />
-            <h3 className="font-mono font-bold text-sm text-zinc-100 uppercase tracking-widest">
+            <h3 className="font-mono font-bold text-xs sm:text-sm text-zinc-100 uppercase tracking-widest">
               Receptor Air-Gapped (Leitor de Transmissão)
             </h3>
           </div>
@@ -205,10 +205,10 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         </div>
 
         {/* Abas */}
-        <div className="flex border-b border-[#2b2e36] bg-[#121316]">
+        <div className="flex border-b border-[#2b2e36] bg-[#121316] shrink-0">
           <button
             onClick={() => setActiveTab('camera')}
-            className={`flex-1 py-2.5 text-xs font-mono font-bold border-b-2 transition-colors ${
+            className={`flex-1 py-2 sm:py-2.5 text-xs font-mono font-bold border-b-2 transition-colors ${
               activeTab === 'camera'
                 ? 'border-amber-500 text-amber-400 bg-[#1c1e24]'
                 : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -218,7 +218,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('file')}
-            className={`flex-1 py-2.5 text-xs font-mono font-bold border-b-2 transition-colors ${
+            className={`flex-1 py-2 sm:py-2.5 text-xs font-mono font-bold border-b-2 transition-colors ${
               activeTab === 'file'
                 ? 'border-amber-500 text-amber-400 bg-[#1c1e24]'
                 : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -228,7 +228,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('paste')}
-            className={`flex-1 py-2.5 text-xs font-mono font-bold border-b-2 transition-colors ${
+            className={`flex-1 py-2 sm:py-2.5 text-xs font-mono font-bold border-b-2 transition-colors ${
               activeTab === 'paste'
                 ? 'border-amber-500 text-amber-400 bg-[#1c1e24]'
                 : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -238,8 +238,8 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           </button>
         </div>
 
-        {/* Conteúdo */}
-        <div className="p-5 space-y-4">
+        {/* Conteúdo com Rolagem Touch Suave no Celular */}
+        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
           {errorMessage && (
             <div className="p-3 bg-amber-950/40 border border-amber-800/80 rounded-lg text-xs font-mono text-amber-200 flex items-start gap-2">
               <AlertCircle size={16} className="shrink-0 text-amber-400 mt-0.5" />

@@ -176,7 +176,7 @@ export const BletchleyParkModal: React.FC<BletchleyParkModalProps> = ({
         </div>
 
         {/* Conteúdo com rolagem suave */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 overscroll-contain space-y-4 sm:space-y-5">
           <p className="text-xs text-zinc-400">Exemplos fictícios inspirados no contexto histórico. Este modo elimina alinhamentos impossíveis; não recupera sozinho a chave nem implementa a Bombe completa.</p>
           {cipherText && <button onClick={() => { setUseOwnMessage(true); setSelectedOffset(0); }} className="text-xs text-amber-300 border border-amber-700 rounded p-2">Analisar minha mensagem {useOwnMessage ? '(ativa)' : ''}</button>}
           {/* SELEÇÃO DA TRANSMISSÃO INTERCEPTADA DA WWII */}

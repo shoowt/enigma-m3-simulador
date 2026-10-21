@@ -58,7 +58,7 @@ export const TopLidModal: React.FC<TopLidModalProps> = ({
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1 min-h-0 overscroll-contain">
           <p className="text-xs text-zinc-400 font-mono leading-relaxed">
             Configure a ordem dos 3 rotores no eixo central, a calibração do anel interno (<em>Ringstellung</em>) e o refletor (<em>Umkehrwalze</em>) de acordo com a Folha de Chaves militar do dia.
           </p>

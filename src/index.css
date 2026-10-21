@@ -53,3 +53,14 @@ body {
   scrollbar-width: none;
 }
 
+/* Suporte de rolagem por toque para iOS e Android */
+html, body {
+  -webkit-overflow-scrolling: touch;
+}
+
+.overscroll-contain {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+

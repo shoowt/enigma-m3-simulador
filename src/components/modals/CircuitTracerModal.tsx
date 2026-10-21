@@ -53,7 +53,7 @@ export const CircuitTracerModal: React.FC<CircuitTracerModalProps> = ({
         </div>
 
         {/* Corpo com Scroll */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 overscroll-contain space-y-5">
           {/* Seletor da Tecla para Rastreamento */}
           <div className="p-3 sm:p-4 rounded-xl bg-[#0f1013] border border-[#2b2e36] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>

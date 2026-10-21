@@ -420,7 +420,13 @@ export default function App() {
         onOpenCircuitModal={() => setIsCircuitModalOpen(true)}
         onOpenBletchleyModal={() => setIsBletchleyModalOpen(true)}
         showModernLab={showModernLab}
-        onToggleModernLab={() => setShowModernLab(prev => !prev)}
+        onToggleModernLab={() => {
+          setShowModernLab(prev => {
+            const next = !prev;
+            if (next) setMobileTab('crypto');
+            return next;
+          });
+        }}
         hasCipherData={!!currentPayload}
       />
 

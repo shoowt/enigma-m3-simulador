@@ -76,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Botões de Ação Rápida */}
-        <div className="flex items-center gap-1 sm:gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar pb-0.5">
+        <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 w-full sm:w-auto">
           <button
             onClick={onOpenKeySheet}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-medium text-zinc-300 bg-[#16181d] hover:bg-[#20232a] border border-[#2b2e37] transition-colors shadow-xs whitespace-nowrap"
