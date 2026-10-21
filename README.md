@@ -77,7 +77,7 @@ Aplicação estática, sem back-end, contas ou banco de dados. Configurações e
 
 React, TypeScript, Vite, Tailwind CSS, SVG, Lucide, Web Crypto API, Web Audio API, `qrcode.react` e `html5-qrcode`.
 
-Ferramentas de IA declaradas pela equipe: **Gemini 3.8, Gemini Argon e Claude Sonnet 5.5** (nomes informados pela equipe). **Codex** foi utilizado na revisão de aderência ao edital, implementação dos cabos arrastáveis, correções do protocolo, interface, testes e documentação. Os integrantes devem compreender e explicar o código e suas decisões na arguição.
+Ferramentas de IA declaradas pela equipe: **Gemini 3.8, Gemini Argon e Claude Sonnet 5.5**. **Codex** foi utilizado na revisão de aderência ao edital, implementação dos cabos arrastáveis, correções do protocolo, interface, testes e documentação.
 
 ## Equipe e divisão de tarefas
 
