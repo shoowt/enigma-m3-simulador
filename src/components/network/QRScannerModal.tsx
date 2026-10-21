@@ -114,14 +114,9 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         verbose: false,
       });
 
-      // Configuração de escaneamento otimizada (20 FPS e qrbox inteligente)
+      // Escaneia o frame inteiro da câmera (20 FPS) sem máscaras para não cortar o código QR
       const scanConfig = {
         fps: 20,
-        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const edge = Math.max(200, Math.floor(minEdge * 0.85));
-          return { width: edge, height: edge };
-        },
       };
 
       // Tenta primeiro a câmera traseira (environment)
@@ -355,8 +350,8 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
                 <div className="h-px bg-[#2b2e35] flex-1"></div>
               </div>
 
-              {/* Viewport de Vídeo em Tempo Real */}
-              <div className="w-full max-w-xs h-60 bg-black rounded-xl border-2 border-amber-500/50 overflow-hidden flex flex-col items-center justify-center relative shadow-inner">
+              {/* Viewport de Vídeo em Tempo Real (Quadrado para enquadramento perfeito de QR Code) */}
+              <div className="w-full max-w-xs aspect-square max-h-[280px] bg-black rounded-xl border-2 border-amber-500/50 overflow-hidden flex flex-col items-center justify-center relative shadow-inner">
                 <div id={scannerContainerId} className="w-full h-full"></div>
                 {!isScanning && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-black/80 gap-2">

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { X, Download, ShieldCheck, Radio, Copy, Check, Image as ImageIcon, Zap } from 'lucide-react';
+import { X, Download, ShieldCheck, Radio, Copy, Check, Image as ImageIcon } from 'lucide-react';
 import type { EnigmaPayload } from '../../types/crypto';
 import { serializePayload } from '../../core/protocolPayload';
 
@@ -128,12 +128,6 @@ export const QRModal: React.FC<QRModalProps> = ({
                 Mensagem grande demais para um QR legível. Divida o texto em mensagens menores ou baixe o arquivo .enigma.
               </p>
             )}
-          </div>
-
-          {/* Badge de Otimização */}
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-300 bg-emerald-950/40 border border-emerald-700/50 px-3 py-1 rounded-full">
-            <Zap size={12} className="text-emerald-400 fill-emerald-400 animate-pulse" />
-            <span>QR Otimizado: Nível L (Módulos Maiores para Leitura Instantânea)</span>
           </div>
 
           <p className="text-xs text-center font-mono text-zinc-400 max-w-sm">
