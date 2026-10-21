@@ -156,7 +156,8 @@
 }
 
 /* ========================================================
-   MODO TELA INTEIRA (FULLSCREEN) & FIT-SCREEN
+   MODO AJUSTAR À TELA (FIT-SCREEN) - 100% VISÍVEL SEM ROLAGEM
+   Garante visualização completa da Fita Telegráfica até os Cabos
    ======================================================== */
 :fullscreen {
   background-color: #0a0b0d !important;
@@ -169,62 +170,100 @@
 }
 
 .enigma-fit-screen {
-  max-width: 640px !important;
+  max-width: min(580px, 96vw) !important;
 }
 
-.enigma-fullscreen-active {
-  max-width: 680px !important;
+.enigma-fit-screen .wood-cabinet,
+.wood-cabinet.enigma-fit-screen {
+  padding: 0.35rem 0.45rem !important;
 }
 
 .enigma-fit-screen .metal-chassis {
-  padding: 0.65rem !important;
-  gap: 0.35rem !important;
+  padding: 0.35rem 0.5rem !important;
+  gap: 0.2rem !important;
 }
 
+/* Fita de Papel compacta */
+.enigma-fit-screen .fita-output-box {
+  min-height: 26px !important;
+  padding: 0.15rem 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* Rotores compactos */
+.enigma-fit-screen .rotor-drum {
+  width: 2.1rem !important;
+  height: 2.2rem !important;
+  margin: 0.1rem 0 !important;
+}
+
+.enigma-fit-screen .rotors-wrapper {
+  padding: 0.2rem 0.5rem !important;
+}
+
+/* Lâmpadas, Teclas e Plugboard proporcionais à altura (vh) */
 .enigma-fit-screen .typewriter-key {
-  width: clamp(24px, 2.8vw, 32px) !important;
-  height: clamp(24px, 2.8vw, 32px) !important;
-  font-size: 12px !important;
-  box-shadow: 0 2px 0 #0d0e0f, 0 3px 6px rgba(0, 0, 0, 0.75) !important;
+  width: clamp(20px, 3.2vh, 28px) !important;
+  height: clamp(20px, 3.2vh, 28px) !important;
+  font-size: clamp(9px, 1.4vh, 12px) !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 1.5px 0 #0d0e0f, 0 2px 4px rgba(0, 0, 0, 0.75) !important;
 }
 
 .enigma-fit-screen .lamp-cell {
-  width: clamp(22px, 2.5vw, 28px) !important;
-  height: clamp(22px, 2.5vw, 28px) !important;
-  font-size: 11px !important;
+  width: clamp(18px, 2.7vh, 24px) !important;
+  height: clamp(18px, 2.7vh, 24px) !important;
+  font-size: clamp(8px, 1.3vh, 11px) !important;
+  border-width: 1px !important;
 }
 
 .enigma-fit-screen .plug-socket {
-  width: clamp(18px, 2.2vw, 24px) !important;
-  height: clamp(18px, 2.2vw, 24px) !important;
+  width: clamp(16px, 2.4vh, 21px) !important;
+  height: clamp(16px, 2.4vh, 21px) !important;
 }
 
 .enigma-fit-screen .plug-socket span {
-  font-size: 9px !important;
+  font-size: clamp(8px, 1.1vh, 9px) !important;
+}
+
+.enigma-fit-screen .plug-helper-text {
+  display: none !important;
+}
+
+.enigma-fit-screen .spacebar-btn {
+  height: 1.35rem !important;
+  font-size: 0.65rem !important;
 }
 
 /* Ajuste automático para telas com altura limitada (laptops normais) */
 @media (min-width: 640px) and (max-height: 900px) {
   .wood-cabinet {
-    padding: 0.5rem !important;
+    padding: 0.35rem 0.45rem !important;
   }
   .metal-chassis {
-    padding: 0.6rem !important;
-    gap: 0.35rem !important;
+    padding: 0.35rem 0.5rem !important;
+    gap: 0.2rem !important;
   }
   .typewriter-key {
-    width: clamp(24px, 2.6vw, 32px) !important;
-    height: clamp(24px, 2.6vw, 32px) !important;
-    font-size: 12px !important;
+    width: clamp(20px, 3.2vh, 28px) !important;
+    height: clamp(20px, 3.2vh, 28px) !important;
+    font-size: clamp(9px, 1.4vh, 12px) !important;
   }
   .lamp-cell {
-    width: clamp(22px, 2.4vw, 28px) !important;
-    height: clamp(22px, 2.4vw, 28px) !important;
-    font-size: 11px !important;
+    width: clamp(18px, 2.7vh, 24px) !important;
+    height: clamp(18px, 2.7vh, 24px) !important;
+    font-size: clamp(8px, 1.3vh, 11px) !important;
   }
   .plug-socket {
-    width: clamp(18px, 2.1vw, 23px) !important;
-    height: clamp(18px, 2.1vw, 23px) !important;
+    width: clamp(16px, 2.4vh, 21px) !important;
+    height: clamp(16px, 2.4vh, 21px) !important;
+  }
+  .plug-helper-text {
+    display: none !important;
+  }
+  .spacebar-btn {
+    height: 1.35rem !important;
+    font-size: 0.65rem !important;
   }
 }
 

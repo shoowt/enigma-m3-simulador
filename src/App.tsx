@@ -513,9 +513,9 @@ export default function App() {
       />
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-1.5 sm:p-2.5 lg:p-3 space-y-1.5 sm:space-y-2 overflow-x-hidden">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-1 sm:p-2 space-y-1 sm:space-y-1.5 overflow-x-hidden">
         {/* Painel Tático de Entrada Rápida de Mensagem (Ultra Compacto) */}
-        <div className="bg-[#131519] border border-[#2b2e36] rounded-xl px-3 py-1.5 shadow-md flex flex-col sm:flex-row items-center gap-2 sm:gap-3 justify-between">
+        <div className="bg-[#131519] border border-[#2b2e36] rounded-lg px-2.5 py-1 shadow-sm flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 justify-between">
           <div className="flex items-center gap-2 shrink-0">
             <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
             <h2 className="text-[11px] font-mono font-bold tracking-wider text-zinc-200 uppercase">

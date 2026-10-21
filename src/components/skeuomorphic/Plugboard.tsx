@@ -213,7 +213,7 @@ export const Plugboard: React.FC<PlugboardProps> = ({
         </div>
       </div>
 
-      <p className="text-[9px] sm:text-[10px] font-mono text-zinc-400 mb-1">
+      <p className="plug-helper-text text-[9px] sm:text-[10px] font-mono text-zinc-400 mb-0.5">
         Arraste entre letras para conectar. Arraste uma ponta para trocar o cabo; clique para desconectar.
       </p>
       <p role="status" className="text-[10px] font-mono text-amber-400" >{notice}</p>

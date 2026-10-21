@@ -76,7 +76,7 @@ export const Keyboard: React.FC<KeyboardProps> = ({
         <button
           type="button"
           onClick={handleSpace}
-          className="flex-1 py-1 px-3 text-[10px] sm:text-[11px] font-mono font-bold text-zinc-300 bg-[#202227] hover:bg-[#282b31] border-2 border-[#545963] rounded-full shadow-[0_2px_0_#0e0f11] active:translate-y-0.5 active:shadow-none transition-all uppercase tracking-wider"
+          className="spacebar-btn flex-1 py-0.5 sm:py-1 px-3 text-[10px] sm:text-[11px] font-mono font-bold text-zinc-300 bg-[#202227] hover:bg-[#282b31] border-2 border-[#545963] rounded-full shadow-[0_2px_0_#0e0f11] active:translate-y-0.5 active:shadow-none transition-all uppercase tracking-wider flex items-center justify-center"
         >
           [ Barra de Espaço ]
         </button>

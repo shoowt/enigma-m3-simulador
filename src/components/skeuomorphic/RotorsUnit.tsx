@@ -42,7 +42,7 @@ export const RotorsUnit: React.FC<RotorsUnitProps> = ({
       </div>
 
       {/* Rotores visíveis */}
-      <div className="flex items-center justify-center gap-3 sm:gap-6 py-1 px-2 sm:px-4 bg-[#0d0e10] rounded-md border border-[#25282e] shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] w-full">
+      <div className="rotors-wrapper flex items-center justify-center gap-3 sm:gap-6 py-0.5 sm:py-1 px-2 sm:px-4 bg-[#0d0e10] rounded-md border border-[#25282e] shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] w-full">
         {positions.map((pos, idx) => (
           <div key={idx} className="flex flex-col items-center">
             {/* Tag do Tipo de Rotor */}
