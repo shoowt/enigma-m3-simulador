@@ -28,27 +28,27 @@ export const Header: React.FC<HeaderProps> = ({
   hasCipherData
 }) => {
   return (
-    <header className="w-full border-b border-[#252830] bg-[#0e0f12]/90 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-4 py-1.5 sm:py-2">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2 sm:gap-3">
+    <header className="w-full border-b border-[#202228] bg-[#0c0d10]/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-4 py-1 sm:py-1.5">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Identidade do Projeto */}
-        <div>
+        <div className="shrink-0">
           <div className="flex items-center gap-1.5">
-            <h1 className="text-xs sm:text-sm font-bold font-mono text-zinc-100 tracking-wider">
+            <h1 className="text-xs sm:text-sm font-semibold font-mono text-zinc-100 tracking-wider whitespace-nowrap">
               ENIGMA M3 SIMULATOR
             </h1>
-            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium whitespace-nowrap">
               VS AES-256
             </span>
           </div>
-          <p className="text-[10px] font-mono text-zinc-400">
+          <p className="text-[10px] font-mono text-zinc-400 whitespace-nowrap">
             Estação:{' '}
-            <strong className="text-amber-400">{currentStation.name}</strong>{' '}
+            <strong className="text-amber-400 font-medium">{currentStation.name}</strong>{' '}
             <span className="text-zinc-500">[{currentStation.callsign}]</span>
           </p>
         </div>
 
         {/* Seletor de Estações Virtuais */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:block shrink-0">
           <StationSelector
             currentStationId={currentStation.id}
             onSelectStation={onSelectStation}
@@ -56,63 +56,63 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Botões de Ação Rápida */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center w-full md:w-auto">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 overflow-x-auto">
           <button
             onClick={onOpenKeySheet}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-zinc-300 bg-[#1c1e23] hover:bg-[#252930] border border-[#373b45] transition-colors shadow-sm"
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-medium text-zinc-300 bg-[#16181d] hover:bg-[#20232a] border border-[#2b2e37] transition-colors shadow-xs whitespace-nowrap"
             title="Abrir Folha de Chaves Mensal Militar"
           >
-            <KeyRound size={13} className="text-amber-400 shrink-0" />
+            <KeyRound size={12} className="text-amber-400 shrink-0" />
             <span><span className="hidden sm:inline">Folha de </span>Chaves</span>
           </button>
 
           <button
             onClick={onOpenTransmitQR}
             disabled={!hasCipherData}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 shadow transition-all active:scale-95"
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-semibold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 shadow-xs transition-all active:scale-95 whitespace-nowrap"
             title="Gerar QR Code para transmissão Air-Gapped"
           >
-            <QrCode size={13} className="shrink-0" />
+            <QrCode size={12} className="shrink-0" />
             <span>Transmitir</span>
           </button>
 
           <button
             onClick={onOpenScanQR}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-zinc-200 bg-[#252830] hover:bg-[#2f333e] border border-[#444955] transition-colors shadow-sm"
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-medium text-zinc-200 bg-[#20232a] hover:bg-[#282d36] border border-[#343844] transition-colors shadow-xs whitespace-nowrap"
             title="Escanear transmissão Air-Gapped via câmera ou imagem"
           >
-            <Scan size={13} className="text-emerald-400 shrink-0" />
+            <Scan size={12} className="text-emerald-400 shrink-0" />
             <span>Receber</span>
           </button>
 
           <button
             onClick={onOpenCircuitModal}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-amber-300 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-700/50 transition-colors shadow-sm"
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-medium text-amber-300 bg-amber-950/30 hover:bg-amber-900/40 border border-amber-700/40 transition-colors shadow-xs whitespace-nowrap"
             title="Visualizar animação do caminho elétrico de 12V pelos rotores e plugboard"
           >
-            <Zap size={13} className="text-amber-400 shrink-0 animate-pulse" />
+            <Zap size={12} className="text-amber-400 shrink-0 animate-pulse" />
             <span>Circuito 12V</span>
           </button>
 
           <button
             onClick={onOpenBletchleyModal}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-700/50 transition-colors shadow-sm"
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-medium text-emerald-300 bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-700/40 transition-colors shadow-xs whitespace-nowrap"
             title="Ataque de crib de Alan Turing explorando a falha E(x) != x"
           >
-            <Search size={13} className="text-emerald-400 shrink-0" />
+            <Search size={12} className="text-emerald-400 shrink-0" />
             <span>Bletchley</span>
           </button>
 
           <button
             onClick={onToggleModernLab}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all shadow-sm ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-medium transition-all shadow-xs whitespace-nowrap ${
               showModernLab
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
-                : 'text-zinc-400 hover:text-zinc-200 bg-[#17181c] border border-[#2d3038]'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                : 'text-zinc-400 hover:text-zinc-200 bg-[#141519] border border-[#262831]'
             }`}
             title="Alternar modo Raio-X comparativo com criptografia moderna"
           >
-            <SplitSquareVertical size={13} className="shrink-0" />
+            <SplitSquareVertical size={12} className="shrink-0" />
             <span>Raio-X</span>
           </button>
         </div>
