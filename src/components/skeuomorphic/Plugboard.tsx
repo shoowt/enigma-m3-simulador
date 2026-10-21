@@ -59,7 +59,17 @@ export const Plugboard: React.FC<PlugboardProps> = ({
   useEffect(() => {
     updateSocketPositions();
     window.addEventListener('resize', updateSocketPositions);
-    return () => window.removeEventListener('resize', updateSocketPositions);
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      ro = new ResizeObserver(() => {
+        updateSocketPositions();
+      });
+      ro.observe(containerRef.current);
+    }
+    return () => {
+      window.removeEventListener('resize', updateSocketPositions);
+      if (ro) ro.disconnect();
+    };
   }, [pairs]);
 
   // Encontra se a letra já possui conexão
@@ -111,46 +121,46 @@ export const Plugboard: React.FC<PlugboardProps> = ({
   };
 
   return (
-    <div className="flex flex-col p-2 sm:p-4 rounded-lg sm:rounded-xl bg-[#121316] border border-[#2b2e35] shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] relative w-full overflow-hidden">
+    <div className="flex flex-col p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-[#121316] border border-[#2b2e35] shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] relative w-full overflow-hidden">
       {/* Cabeçalho do Plugboard */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] sm:text-[11px] font-mono tracking-widest text-amber-500 uppercase font-bold">
+      <div className="flex items-center justify-between gap-1 mb-1 sm:mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-amber-500 uppercase font-bold">
             STECKERBRETT (CABOS)
           </span>
-          <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-[#1e2025] text-zinc-400 font-mono">
-            {pairs.length}/10 cabos
+          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#1e2025] text-zinc-400 font-mono">
+            {pairs.length}/10
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-1">
           <button
             onClick={onResetToDaily}
-            className="flex items-center gap-1 text-[10px] sm:text-[11px] font-mono text-zinc-400 hover:text-amber-400 px-2 py-1 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
+            className="flex items-center gap-1 text-[9px] sm:text-[10px] font-mono text-zinc-400 hover:text-amber-400 px-1.5 py-0.5 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
             title="Restaurar conexões da Folha de Chaves do Dia"
           >
-            <RotateCcw size={11} />
-            <span>Chave do Dia</span>
+            <RotateCcw size={10} />
+            <span className="hidden sm:inline">Chave do Dia</span>
           </button>
           <button
             onClick={handleClearAll}
-            className="flex items-center gap-1 text-[10px] sm:text-[11px] font-mono text-zinc-400 hover:text-red-400 px-2 py-1 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
+            className="flex items-center gap-1 text-[9px] sm:text-[10px] font-mono text-zinc-400 hover:text-red-400 px-1.5 py-0.5 bg-[#1a1c20] hover:bg-[#252830] border border-[#373a42] rounded transition-colors"
             title="Remover todos os cabos"
           >
-            <Unplug size={11} />
-            <span>Desconectar</span>
+            <Unplug size={10} />
+            <span className="hidden sm:inline">Desconectar</span>
           </button>
         </div>
       </div>
 
       {selectedLetter && (
-        <div className="text-xs font-mono text-amber-400 bg-amber-950/40 border border-amber-800/60 rounded px-2.5 py-1 mb-2 text-center animate-pulse">
+        <div className="text-[10px] sm:text-xs font-mono text-amber-400 bg-amber-950/40 border border-amber-800/60 rounded px-2 py-0.5 mb-1 text-center animate-pulse">
           Pino 1 conectado em <strong>[{selectedLetter}]</strong>. Clique na segunda letra para fechar o circuito.
         </div>
       )}
 
       {/* Grid de Soquetes com SVG dos Cabos sobreposto */}
-      <div ref={containerRef} className="relative py-2">
+      <div ref={containerRef} className="relative py-1">
         {/* Camada SVG para renderizar as curvas dos cabos */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
           {pairs.map((pair, pIdx) => {
@@ -164,35 +174,36 @@ export const Plugboard: React.FC<PlugboardProps> = ({
             const dy = posB.y - posA.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             // Curvatura gravitacional natural
-            const sag = Math.max(dist * 0.4, 30);
+            const sag = Math.max(dist * 0.35, 24);
 
-            const path = `M ${posA.x} ${posA.y} C ${posA.x} ${posA.y + sag}, ${posB.x} ${posB.y + sag}, ${posB.y} ${posB.y}`;
+            const path = `M ${posA.x} ${posA.y} C ${posA.x} ${posA.y + sag}, ${posB.x} ${posB.y + sag}, ${posB.x} ${posB.y}`;
             const color = CABLE_COLORS[pIdx % CABLE_COLORS.length];
 
             return (
               <g key={pair}>
                 {/* Sombra de oclusão do cabo */}
-                <path d={path} fill="none" stroke="black" strokeWidth="9" opacity="0.45" />
+                <path d={path} fill="none" stroke="black" strokeWidth="8" opacity="0.45" />
                 {/* Jaqueta emborrachada do cabo */}
-                <path d={path} fill="none" stroke={color} strokeWidth="5.5" strokeLinecap="round" />
+                <path d={path} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" />
                 {/* Linha reflexiva */}
-                <path d={path} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeDasharray="3,2" />
+                <path d={path} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" strokeDasharray="3,2" />
                 {/* Buchas metálicas */}
-                <circle cx={posA.x} cy={posA.y} r="5" fill="#52525b" stroke="#18181b" strokeWidth="1.5" />
-                <circle cx={posB.x} cy={posB.y} r="5" fill="#52525b" stroke="#18181b" strokeWidth="1.5" />
+                <circle cx={posA.x} cy={posA.y} r="4.5" fill="#52525b" stroke="#18181b" strokeWidth="1.5" />
+                <circle cx={posB.x} cy={posB.y} r="4.5" fill="#52525b" stroke="#18181b" strokeWidth="1.5" />
               </g>
             );
           })}
         </svg>
 
         {/* Soquetes das 26 letras */}
-        <div className="flex flex-col gap-2 sm:gap-3 relative z-0">
+        <div className="flex flex-col gap-1 sm:gap-1.5 relative z-0">
           {PLUGBOARD_ROWS.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex justify-center gap-1 sm:gap-2.5 w-full">
+            <div key={rowIdx} className="flex justify-center gap-1 sm:gap-2 w-full">
               {row.map(char => {
                 const connectedPair = getConnectedPair(char);
                 const isSelected = selectedLetter === char;
                 const isConnected = !!connectedPair;
+
 
                 return (
                   <button

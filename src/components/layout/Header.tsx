@@ -28,24 +28,24 @@ export const Header: React.FC<HeaderProps> = ({
   hasCipherData
 }) => {
   return (
-    <header className="w-full border-b border-[#252830] bg-[#0e0f12]/90 backdrop-blur-md sticky top-0 z-40 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+    <header className="w-full border-b border-[#252830] bg-[#0e0f12]/90 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-4 py-1.5 sm:py-2">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2 sm:gap-3">
         {/* Identidade do Projeto */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.3)] border border-amber-400/40">
-            <span className="font-mono font-black text-lg text-black">M3</span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-[0_0_12px_rgba(245,158,11,0.25)] border border-amber-400/40 shrink-0">
+            <span className="font-mono font-black text-xs sm:text-sm text-black">M3</span>
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-bold font-mono text-zinc-100 tracking-wider">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xs sm:text-sm font-bold font-mono text-zinc-100 tracking-wider">
                 ENIGMA M3 SIMULATOR
               </h1>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
-                VS AES-256-GCM
+              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+                VS AES-256
               </span>
             </div>
-            <p className="text-[11px] font-mono text-zinc-400">
-              Estação Ativa:{' '}
+            <p className="text-[10px] font-mono text-zinc-400">
+              Estação:{' '}
               <strong className="text-amber-400">{currentStation.name}</strong>{' '}
               <span className="text-zinc-500">[{currentStation.callsign}]</span>
             </p>

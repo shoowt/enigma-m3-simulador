@@ -37,13 +37,13 @@ export const Keyboard: React.FC<KeyboardProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-3.5 rounded-lg sm:rounded-xl bg-[#17191d] border border-[#2e323a] shadow-md w-full overflow-hidden">
-      <div className="text-[9px] sm:text-[10px] font-mono tracking-widest text-zinc-500 uppercase font-semibold mb-0.5 sm:mb-1">
+    <div className="flex flex-col items-center gap-1 sm:gap-1.5 p-1 sm:p-2 rounded-lg sm:rounded-xl bg-[#17191d] border border-[#2e323a] shadow-md w-full overflow-hidden">
+      <div className="text-[8px] sm:text-[9px] font-mono tracking-widest text-zinc-500 uppercase font-semibold mb-0.5">
         TASTATUR (TECLADO MECÂNICO)
       </div>
 
       {KEYBOARD_ROWS.map((row, rowIdx) => (
-        <div key={rowIdx} className="flex justify-center gap-1 sm:gap-2 w-full">
+        <div key={rowIdx} className="flex justify-center gap-1 sm:gap-1.5 w-full">
           {row.map(char => {
             const isPressed = pressedKey === char;
             return (
@@ -72,11 +72,11 @@ export const Keyboard: React.FC<KeyboardProps> = ({
       ))}
 
       {/* Barra de Espaço e Atalhos de Apoio */}
-      <div className="flex items-center gap-3 mt-2 w-full max-w-sm justify-center">
+      <div className="flex items-center gap-3 mt-1 w-full max-w-xs justify-center">
         <button
           type="button"
           onClick={handleSpace}
-          className="flex-1 py-1.5 px-4 text-xs font-mono font-bold text-zinc-300 bg-[#202227] hover:bg-[#282b31] border-2 border-[#545963] rounded-full shadow-[0_4px_0_#0e0f11] active:translate-y-1 active:shadow-none transition-all uppercase tracking-wider"
+          className="flex-1 py-1 px-3 text-[10px] sm:text-[11px] font-mono font-bold text-zinc-300 bg-[#202227] hover:bg-[#282b31] border-2 border-[#545963] rounded-full shadow-[0_2px_0_#0e0f11] active:translate-y-0.5 active:shadow-none transition-all uppercase tracking-wider"
         >
           [ Barra de Espaço ]
         </button>

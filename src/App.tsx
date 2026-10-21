@@ -513,22 +513,20 @@ export default function App() {
       />
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-5 lg:p-8 space-y-3 sm:space-y-6 overflow-x-hidden">
-        {/* Painel Tático de Entrada Rápida de Mensagem */}
-        <div className="bg-[#131519] border border-[#2b2e36] rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-lg flex flex-col md:flex-row items-stretch md:items-center gap-3 sm:gap-4 justify-between">
-          <div className="flex-1 w-full space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
-              <h2 className="text-[11px] sm:text-xs font-mono font-bold tracking-widest text-zinc-200 uppercase">
-                Terminal de Transmissão Tática
-              </h2>
-            </div>
-            <p className="text-[10px] sm:text-[11px] font-mono text-zinc-400 hidden sm:block">
-              Digite letras diretamente no seu teclado físico, clique nas teclas da máquina 2.5D ou cole um texto militar abaixo para cifrar instantaneamente.
-            </p>
+      <main className="flex-1 max-w-7xl w-full mx-auto p-1.5 sm:p-2.5 lg:p-3 space-y-1.5 sm:space-y-2 overflow-x-hidden">
+        {/* Painel Tático de Entrada Rápida de Mensagem (Ultra Compacto) */}
+        <div className="bg-[#131519] border border-[#2b2e36] rounded-xl px-3 py-1.5 shadow-md flex flex-col sm:flex-row items-center gap-2 sm:gap-3 justify-between">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+            <h2 className="text-[11px] font-mono font-bold tracking-wider text-zinc-200 uppercase">
+              Terminal Tático
+            </h2>
+            <span className="text-[10px] font-mono text-zinc-500 hidden md:inline">
+              (ou digite nas teclas da Enigma)
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
             <input
               type="text"
               value={batchInput}
@@ -536,33 +534,33 @@ export default function App() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleProcessBatchText();
               }}
-              placeholder="Ex: ATAQUE AO AMANHECER..."
-              className="flex-1 md:w-64 bg-[#0d0e11] border border-[#373a44] rounded-lg px-3 py-2 text-xs font-mono text-amber-300 placeholder-zinc-600 focus:outline-none focus:border-amber-500 uppercase"
+              placeholder="Digitar texto (ex: ATAQUE)..."
+              className="flex-1 sm:w-56 bg-[#0d0e11] border border-[#373a44] rounded-lg px-2.5 py-1 text-xs font-mono text-amber-300 placeholder-zinc-600 focus:outline-none focus:border-amber-500 uppercase"
             />
             <button
               onClick={handleProcessBatchText}
               disabled={!batchInput.trim()}
-              className="px-3 sm:px-4 py-2 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
+              className="px-3 py-1 font-mono text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1 shrink-0"
             >
-              <Play size={13} fill="currentColor" />
+              <Play size={12} fill="currentColor" />
               <span>Cifrar</span>
             </button>
             {cipherTape.length > 0 && (
               <>
                 <button
                   onClick={handleDecryptCurrentTape}
-                  className="px-3 py-2 font-mono text-xs font-bold text-amber-300 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-700/60 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
+                  className="px-2.5 py-1 font-mono text-xs font-bold text-amber-300 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-700/60 rounded-lg shadow transition-all active:scale-95 flex items-center gap-1 shrink-0"
                   title="Decifrar fita: reseta os rotores para a posição inicial e passa a cifra pela Enigma"
                 >
-                  <KeyRound size={13} className="text-amber-400" />
-                  <span>Decifrar Fita</span>
+                  <KeyRound size={12} className="text-amber-400" />
+                  <span>Decifrar</span>
                 </button>
                 <button
                   onClick={handleClearTape}
-                  className="p-2 text-zinc-400 hover:text-red-400 bg-[#1a1c22] border border-[#333742] rounded-lg transition-colors shrink-0"
+                  className="p-1 text-zinc-400 hover:text-red-400 bg-[#1a1c22] border border-[#333742] rounded-lg transition-colors shrink-0"
                   title="Limpar texto cifrado e reiniciar estado"
                 >
-                  <RotateCcw size={15} />
+                  <RotateCcw size={13} />
                 </button>
               </>
             )}
