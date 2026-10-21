@@ -1,6 +1,6 @@
-import React from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import { X, Download, ShieldCheck, Radio } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
+import { X, Download, ShieldCheck, Radio, Copy, Check, Image as ImageIcon, Zap } from 'lucide-react';
 import type { EnigmaPayload } from '../../types/crypto';
 import { serializePayload } from '../../core/protocolPayload';
 
@@ -15,6 +15,9 @@ export const QRModal: React.FC<QRModalProps> = ({
   onClose,
   payload
 }) => {
+  const [copied, setCopied] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   if (!isOpen || !payload) return null;
 
   const rawJson = serializePayload(payload);
@@ -28,6 +31,33 @@ export const QRModal: React.FC<QRModalProps> = ({
     a.download = `msg_${payload.net.src}_to_${payload.net.dst}_${Date.now()}.enigma`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPNG = () => {
+    if (!canvasRef.current) return;
+    const url = canvasRef.current.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `qr_${payload.net.src}_to_${payload.net.dst}_${Date.now()}.png`;
+    a.click();
+  };
+
+  const handleCopyJSON = async () => {
+    try {
+      await navigator.clipboard.writeText(rawJson);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback para navegadores sem permissão de clipboard
+      const ta = document.createElement('textarea');
+      ta.value = rawJson;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
@@ -50,7 +80,7 @@ export const QRModal: React.FC<QRModalProps> = ({
         </div>
 
         {/* Corpo do Modal */}
-        <div className="p-4 sm:p-6 flex flex-col items-center gap-4 sm:gap-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
+        <div className="p-4 sm:p-6 flex flex-col items-center gap-3.5 sm:gap-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
           {/* Identificação de Rota */}
           <div className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#0e0f12] border border-[#262830] font-mono text-xs">
             <div>
@@ -68,23 +98,75 @@ export const QRModal: React.FC<QRModalProps> = ({
             </div>
           </div>
 
-          {/* O QR Code com borda e contraste para leitura via smartphone */}
-          <div className="p-3 sm:p-4 bg-white rounded-xl shadow-2xl flex items-center justify-center border-4 border-amber-500 max-w-[240px] sm:max-w-none">
-            {fitsQR ? <QRCodeSVG
-              value={rawJson}
-              size={210}
-              level="M"
-              marginSize={3}
-              className="w-full h-auto max-w-[200px] aspect-square"
-            /> : <p className="max-w-xs text-sm text-black p-4">Mensagem grande demais para um QR legível. Divida o texto em mensagens menores ou baixe o arquivo .enigma.</p>}
+          {/* O QR Code com borda e contraste para leitura rápida via smartphone */}
+          <div className="relative p-3.5 sm:p-4 bg-white rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.7)] flex items-center justify-center border-4 border-amber-500/90 w-full max-w-[270px] sm:max-w-[320px] aspect-square">
+            {fitsQR ? (
+              <>
+                <QRCodeSVG
+                  value={rawJson}
+                  size={300}
+                  level="L"
+                  boostLevel={false}
+                  marginSize={4}
+                  className="w-full h-full aspect-square"
+                  style={{ shapeRendering: 'crispEdges' }}
+                />
+                {/* Canvas oculto para download em alta resolução (600x600 HD) */}
+                <div className="hidden">
+                  <QRCodeCanvas
+                    ref={canvasRef}
+                    value={rawJson}
+                    size={600}
+                    level="L"
+                    boostLevel={false}
+                    marginSize={4}
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="max-w-xs text-sm text-black p-4 text-center">
+                Mensagem grande demais para um QR legível. Divida o texto em mensagens menores ou baixe o arquivo .enigma.
+              </p>
+            )}
+          </div>
+
+          {/* Badge de Otimização */}
+          <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-300 bg-emerald-950/40 border border-emerald-700/50 px-3 py-1 rounded-full">
+            <Zap size={12} className="text-emerald-400 fill-emerald-400 animate-pulse" />
+            <span>QR Otimizado: Nível L (Módulos Maiores para Leitura Instantânea)</span>
           </div>
 
           <p className="text-xs text-center font-mono text-zinc-400 max-w-sm">
-            Aponte a câmera do dispositivo receptor (celular ou tablet) para escanear a transmissão 100% isolada da rede (air-gapped).
+            Aponte a câmera do dispositivo receptor (celular ou tablet). O código foi calibrado com módulos ampliados e alto contraste para captura imediata.
           </p>
 
+          {/* Ações Rápidas: Copiar JSON & Baixar PNG */}
+          <div className="grid grid-cols-2 gap-2 w-full">
+            <button
+              type="button"
+              onClick={handleCopyJSON}
+              className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all ${
+                copied
+                  ? 'bg-emerald-950/60 border-emerald-600 text-emerald-300'
+                  : 'bg-[#181a20] hover:bg-[#22252e] border-[#2f333e] text-zinc-300'
+              }`}
+            >
+              {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} className="text-zinc-400" />}
+              <span>{copied ? 'Payload Copiado!' : 'Copiar JSON'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadPNG}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-[#181a20] hover:bg-[#22252e] border border-[#2f333e] text-zinc-300 transition-colors"
+            >
+              <ImageIcon size={13} className="text-amber-400" />
+              <span>Baixar Foto (PNG)</span>
+            </button>
+          </div>
+
           {/* Ciphertext Resumido */}
-          <div className="w-full p-3 rounded bg-[#0e0f12] border border-[#24262d] font-mono text-[11px] space-y-1">
+          <div className="w-full p-2.5 rounded bg-[#0e0f12] border border-[#24262d] font-mono text-[11px] space-y-1">
             <div className="text-zinc-500 flex justify-between">
               <span>Ciphertext Enigma:</span>
               <span className="text-amber-400 font-bold truncate max-w-[160px] sm:max-w-none">{payload.enigma.ct.slice(0, 24)}...</span>
