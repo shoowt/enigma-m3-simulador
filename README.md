@@ -232,7 +232,7 @@ enigma-m3-simulador/
 ├── package.json
 └── README.md
 ```
-
+OBS: utilização de ferramentas IA para desenvolvimento do software.
 ---
 
 ## 📜 Licença e Contexto Acadêmico
