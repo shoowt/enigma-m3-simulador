@@ -18,7 +18,7 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
           <button
             key={st.id}
             onClick={() => onSelectStation(st)}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-2 py-0.5 xl:px-2.5 xl:py-1 rounded-md text-[10.5px] xl:text-[11px] font-mono font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
               isCurrent
                 ? 'bg-[#1e2027] text-amber-300 border border-amber-500/35 shadow-xs'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-[#16171b]'
