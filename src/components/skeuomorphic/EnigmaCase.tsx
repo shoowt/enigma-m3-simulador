@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, FileText, Maximize2, Minimize2 } from 'lucide-react';
 import { RotorsUnit } from './RotorsUnit';
 import { Lampboard } from './Lampboard';
@@ -43,7 +43,51 @@ export const EnigmaCase: React.FC<EnigmaCaseProps> = ({
   onClearTape
 }) => {
   const [isMuted, setIsMuted] = useState<boolean>(soundEffects.isMuted);
-  const [isFitScreen, setIsFitScreen] = useState<boolean>(true);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFs = Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(isFs);
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        const root = document.documentElement;
+        if (root.requestFullscreen) {
+          await root.requestFullscreen();
+        } else if ((root as any).webkitRequestFullscreen) {
+          await (root as any).webkitRequestFullscreen();
+        } else {
+          setIsFullscreen(prev => !prev);
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else {
+          setIsFullscreen(false);
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao alternar tela inteira:', err);
+      setIsFullscreen(prev => !prev);
+    }
+  };
 
   const toggleMute = () => {
     soundEffects.isMuted = !soundEffects.isMuted;
@@ -51,7 +95,7 @@ export const EnigmaCase: React.FC<EnigmaCaseProps> = ({
   };
 
   return (
-    <div className={`wood-cabinet p-1.5 sm:p-2.5 md:p-3 max-w-2xl mx-auto shadow-2xl relative select-none transition-all ${isFitScreen ? 'enigma-fit-screen' : ''}`}>
+    <div className={`wood-cabinet p-1.5 sm:p-2.5 md:p-3 max-w-2xl mx-auto shadow-2xl relative select-none transition-all enigma-fit-screen ${isFullscreen ? 'enigma-fullscreen-active' : ''}`}>
       {/* 4 Parafusos de latão nos cantos da madeira */}
       <div className="absolute top-1 left-1 sm:top-2 sm:left-2 brass-screw"></div>
       <div className="absolute top-1 right-1 sm:top-2 sm:right-2 brass-screw"></div>
@@ -72,19 +116,19 @@ export const EnigmaCase: React.FC<EnigmaCaseProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Botão Toda a Máquina na Tela / Ajustar */}
+            {/* Botão Tela Inteira */}
             <button
               type="button"
-              onClick={() => setIsFitScreen(!isFitScreen)}
+              onClick={toggleFullscreen}
               className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all border ${
-                isFitScreen
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                isFullscreen
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
                   : 'bg-[#1e2024] text-zinc-400 hover:text-zinc-200 border-[#393d46]'
               }`}
-              title={isFitScreen ? 'Alternar para tamanho expandido' : 'Ajustar para toda a máquina caber na tela sem rolagem'}
+              title={isFullscreen ? 'Sair do modo Tela Inteira (Esc)' : 'Ativar modo Tela Inteira (F11)'}
             >
-              {isFitScreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
-              <span className="hidden sm:inline">{isFitScreen ? 'Visão Completa' : 'Ajustar à Tela'}</span>
+              {isFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+              <span className="hidden sm:inline">{isFullscreen ? 'Sair da Tela Inteira' : 'Tela Inteira'}</span>
             </button>
 
             {/* Mudo / Som */}

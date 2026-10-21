@@ -156,10 +156,24 @@
 }
 
 /* ========================================================
-   MODO AJUSTAR À TELA (FIT-SCREEN) - 100% VISÍVEL SEM ROLAGEM
+   MODO TELA INTEIRA (FULLSCREEN) & FIT-SCREEN
    ======================================================== */
+:fullscreen {
+  background-color: #0a0b0d !important;
+  overflow-y: auto;
+}
+
+:-webkit-full-screen {
+  background-color: #0a0b0d !important;
+  overflow-y: auto;
+}
+
 .enigma-fit-screen {
   max-width: 640px !important;
+}
+
+.enigma-fullscreen-active {
+  max-width: 680px !important;
 }
 
 .enigma-fit-screen .metal-chassis {
